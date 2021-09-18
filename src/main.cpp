@@ -24,9 +24,18 @@ int main()
     // (i.e. we just crashed and restarted), we don't care for waiting the 30
     // or so seconds to make a new one, we're happy to just ditch the old and start afresh.
     int opt = 1;
-    if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+    if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0)
     {
         perror("Unable to reuse sockets");
+        exit(-1);
+    }
+
+    // Tell the kernel too that any CTRL-C's sent over ought not to disconnect or
+    // close the socket, but rather just raise an error whenever we use it. (In other
+    // words, don't crash the server thread when a user exits).
+    if (setsockopt(serverFd, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(opt)) < 0)
+    {
+        perror("Unable to use SE_NOSIGPIPE");
         exit(-1);
     }
 

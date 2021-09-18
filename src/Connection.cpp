@@ -14,7 +14,7 @@ Connection::Connection(int clientFd, const std::string address)
 
     const auto Send = [&](const std::string& string)
     {
-        send(clientFd, string.c_str(), string.size(), MSG_NOSIGNAL);
+        send(clientFd, string.c_str(), string.size(), 0);
     };
 
     const auto Read = [&](const std::string& prompt = "")
@@ -74,6 +74,9 @@ Connection::Connection(int clientFd, const std::string address)
         // Do command
         const auto command = Read("> ");
         alive = Game::Get().OnCommand(command, *player);
+
+        // Clear screen
+        Send("\e[1;1H\e[2J");
 
         // Return output
         player->outputBuffer += "\n";
