@@ -1,5 +1,6 @@
 #pragma once
 #include "Area.h"
+#include "Item.h"
 #include "Player.h"
 
 class Game
@@ -22,6 +23,7 @@ private:
 
 public:
     std::unordered_map<std::string, Player> players;
+    Item items[Item::Items::NUM_ITEMS];
     std::vector<Area*> areas;
     std::string motd;
 
@@ -38,4 +40,5 @@ public:
     void LoadAreas();
 
     bool OnCommand(const std::string& string, Player& player);
+    void PrintItems(Player& player, bool showIfEmpty);
 };

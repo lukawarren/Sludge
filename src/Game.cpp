@@ -18,6 +18,13 @@ Game::Game()
 
     // Load variables
     motd = ReadFile("motd.txt");
+
+    // Create items
+    items[Item::Items::caveMushroom] =
+        Item("Cave Mushroom", "a mushroom found amongst shadows and stone", [](Player& player)
+    {
+        player << "Bob";
+    });
 }
 
 Player* Game::AddPlayer(const std::string& name)
@@ -87,6 +94,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
     if (command == "help")
     {
         player << "- look - see surrounding area\n";
+        player << "- items - view nearby items\n";
+        player << "- get [item] - pickup item\n";
+        player << "- info - view player stats\n";
         player << "- move - move to new area\n";
         player << "- quit - disconnect\n";
         player << "- help - list commands\n";
@@ -96,7 +106,48 @@ bool Game::OnCommand(const std::string& string, Player& player)
         player << "- d - move right\n";
     }
 
-    else if (command == "look") areas[player.area]->Look(player);
+    else if (command == "look")
+    {
+        areas[player.area]->Look(player);
+        player << "\n";
+        PrintItems(player, false);
+    }
+
+    else if (command == "items")
+    {
+        PrintItems(player, true);
+    }
+
+    else if (command == "get" && arg.has_value())
+    {
+        const auto itemIDs = areas[player.area]->GetItems(player.cell);
+
+        // Check item ID and args exists
+        if (arg.value() <= itemIDs.size())
+        {
+            // Give item to player
+            const auto itemID = itemIDs[arg.value()-1];
+            player.items[itemID]++;
+            player << "You pick up a " << items[itemID].name << "\n";
+        }
+        else
+            player << "That item does not exist here\n";
+    }
+
+    else if (command == "info")
+    {
+        player << "Name: " << player.name << "\n";
+        player << "Level " << player.level << "\n";
+        player << "Inventory: \n";
+
+        for (const auto &[key, value] : player.items)
+        {
+            player << "- " << items[key].name << " x " << value << "\n";
+        }
+
+        if (player.items.size() == 0) player << "- You have no items\n";
+
+    }
 
     else if (command == "move")
     {
@@ -106,7 +157,10 @@ bool Game::OnCommand(const std::string& string, Player& player)
             const auto area = portal.value().area;
             player.area = area;
             player.cell = portal.value().cell.value_or(areas[area]->GetStartingCell());
+
             areas[player.area]->Look(player);
+            player << "\n";
+            PrintItems(player, false);
         }
 
         else
@@ -127,6 +181,22 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else player << "Unknown or invalid command\n";
 
     return true;
+}
+
+void Game::PrintItems(Player& player, bool showIfEmpty)
+{
+    const auto itemIDs = areas[player.area]->GetItems(player.cell);
+
+    if (itemIDs.size() == 0 && !showIfEmpty)
+    {
+        player << "There are no items here\n";
+        return;
+    }
+
+    player << "Items:\n";
+
+    for (size_t i = 0; i < itemIDs.size(); ++i)
+        player << "- " << i+1 << " - " << items[itemIDs[i]].name << ": " << items[itemIDs[i]].description << "\n";
 }
 
 Game::~Game()

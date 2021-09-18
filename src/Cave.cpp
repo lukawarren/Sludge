@@ -1,10 +1,11 @@
 #include "Cave.h"
 #include "PerlinNoise.hpp"
+#include "Item.h"
 
 std::vector<std::string> Cave::descriptions;
 
 Cave::Cave(const int width, const int height, const unsigned int seed, const Portal parentPortal) :
-    parentPortal(parentPortal), width(width), height(height), seed(seed)
+    parentPortal(parentPortal), width(width), height(height)
 {
     // Create empty rooms
     rooms = new Room[width * height];
@@ -98,6 +99,8 @@ Cell Cave::GetStartingCell() const
 
 void Cave::Look(Player& player) const
 {
+    player << "You stand in a cave:\n"; 
+
     // Check enough descriptions exist
     const size_t numDescriptions = 2;
     if (descriptions.size() < numDescriptions)
@@ -125,17 +128,14 @@ void Cave::Look(Player& player) const
     }
 
     // Print paths
-    player << "\nWays forward: ";
+    player << "\nWays forward:\n";
 
     const int worldX = player.cell % width;
     const int worldY = player.cell / width;
-    if (IsValid(worldX,   worldY-1)) player << "W";
-    if (IsValid(worldX-1, worldY  )) player << "A";
-    if (IsValid(worldX,   worldY+1)) player << "S";
-    if (IsValid(worldX+1, worldY  )) player << "D";
-    
-    player << "\n";
-    player << "Cell: " << player.cell << "\n";
+    if (IsValid(worldX,   worldY-1)) player << "- W\n";
+    if (IsValid(worldX-1, worldY  )) player << "- A\n";
+    if (IsValid(worldX,   worldY+1)) player << "- S\n";
+    if (IsValid(worldX+1, worldY  )) player << "- D\n";
 }
 
 void Cave::Move(Player& player, const Direction direction, const int distance) const
@@ -164,6 +164,11 @@ void Cave::Move(Player& player, const Direction direction, const int distance) c
 
     if (maxDistance == 0) player << "You have hit a dead end\n";
     else Look(player);
+}
+
+std::vector<ItemID> Cave::GetItems(const Cell cell) const
+{
+    return { Item::Items::caveMushroom };
 }
 
 bool Cave::IsValid(const int x, const int y) const

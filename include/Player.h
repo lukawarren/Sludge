@@ -12,6 +12,8 @@ public:
     unsigned int area;
     Cell cell;
 
+    std::unordered_map<ItemID, unsigned int> items;
+    
     std::string outputBuffer;
 
     template<typename T>

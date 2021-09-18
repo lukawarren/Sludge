@@ -78,10 +78,7 @@ Connection::Connection(int clientFd, const std::string address)
         // Do command
         const auto command = Read("> ");
         alive = Game::Get().OnCommand(command, *player);
-
-        // Clear screen
-        Send("\e[1;1H\e[2J");
-
+        
         // Return output
         player->outputBuffer += "\n";
         Send(player->outputBuffer);
