@@ -14,7 +14,11 @@ Connection::Connection(int clientFd, const std::string address)
 
     const auto Send = [&](const std::string& string)
     {
-        send(clientFd, string.c_str(), string.size(), 0);
+        #ifdef __APPLE__
+            send(clientFd, string.c_str(), string.size(), 0);
+        #else
+            send(clientFd, string.c_str(), string.size(), MSG_NOSIGNAL);
+        #endif
     };
 
     const auto Read = [&](const std::string& prompt = "")

@@ -30,6 +30,7 @@ int main()
         exit(-1);
     }
 
+#ifdef __APPLE__
     // Tell the kernel too that any CTRL-C's sent over ought not to disconnect or
     // close the socket, but rather just raise an error whenever we use it. (In other
     // words, don't crash the server thread when a user exits).
@@ -38,6 +39,7 @@ int main()
         perror("Unable to use SE_NOSIGPIPE");
         exit(-1);
     }
+#endif
 
     // Bind to port
     struct sockaddr_in address;
