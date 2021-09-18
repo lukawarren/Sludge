@@ -21,6 +21,7 @@ public:
     Cell GetStartingCell() const override;
     void Look(Player& player) const override;
     void Move(Player& player, const Direction direction, const int distance) const override;
+    std::vector<ItemStack>& GetItems(const Cell cell) const override;
 
 private:
     Tile* tiles;

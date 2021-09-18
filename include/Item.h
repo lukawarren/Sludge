@@ -1,3 +1,4 @@
+#pragma once
 #include "Common.h"
 
 class Item
@@ -26,4 +27,12 @@ public:
 private:
     std::function<void(Player&)> onUse;
 
+};
+
+struct ItemStack
+{
+    ItemID item;
+    unsigned int number;
+
+    ItemStack(ItemID item, unsigned int number) : item(item), number(number) {}
 };

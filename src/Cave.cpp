@@ -166,9 +166,9 @@ void Cave::Move(Player& player, const Direction direction, const int distance) c
     else Look(player);
 }
 
-std::vector<ItemID> Cave::GetItems(const Cell cell) const
+std::vector<ItemStack>& Cave::GetItems(const Cell cell) const
 {
-    return { Item::Items::caveMushroom };
+    return rooms[cell].items;
 }
 
 bool Cave::IsValid(const int x, const int y) const

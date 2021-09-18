@@ -120,15 +120,19 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
     else if (command == "get" && arg.has_value())
     {
-        const auto itemIDs = areas[player.area]->GetItems(player.cell);
+        auto& itemStacks = areas[player.area]->GetItems(player.cell);
 
         // Check item ID and args exists
-        if (arg.value() <= itemIDs.size())
+        if ((unsigned int)arg.value() <= itemStacks.size())
         {
             // Give item to player
-            const auto itemID = itemIDs[arg.value()-1];
-            player.items[itemID]++;
-            player << "You pick up a " << items[itemID].name << "\n";
+            const auto itemID = itemStacks[arg.value()-1].item;
+            const auto amount = itemStacks[arg.value()-1].number;
+            player.items[itemID] += amount;
+            player << "You pick up a " << items[itemID].name << " (x" << amount << ")\n";
+
+            // Remove item from area
+            itemStacks.erase(itemStacks.begin() + arg.value()-1);
         }
         else
             player << "That item does not exist here\n";
@@ -137,7 +141,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else if (command == "info")
     {
         player << "Name: " << player.name << "\n";
-        player << "Level " << player.level << "\n";
+        player << "Level: " << player.level << "\n";
         player << "Inventory: \n";
 
         for (const auto &[key, value] : player.items)
@@ -173,10 +177,10 @@ bool Game::OnCommand(const std::string& string, Player& player)
         return false;
     }
 
-    else if (command == "w") areas[player.area]->Move(player, Area::Direction::Up,    arg.value_or(1));
-    else if (command == "s") areas[player.area]->Move(player, Area::Direction::Down,  arg.value_or(1));
-    else if (command == "a") areas[player.area]->Move(player, Area::Direction::Left,  arg.value_or(1));
-    else if (command == "d") areas[player.area]->Move(player, Area::Direction::Right, arg.value_or(1));
+    else if (command == "w") { areas[player.area]->Move(player, Area::Direction::Up,    arg.value_or(1)); player << "\n"; PrintItems(player, false); }
+    else if (command == "s") { areas[player.area]->Move(player, Area::Direction::Down,  arg.value_or(1)); player << "\n"; PrintItems(player, false); }
+    else if (command == "a") { areas[player.area]->Move(player, Area::Direction::Left,  arg.value_or(1)); player << "\n"; PrintItems(player, false); }
+    else if (command == "d") { areas[player.area]->Move(player, Area::Direction::Right, arg.value_or(1)); player << "\n"; PrintItems(player, false); }
 
     else player << "Unknown or invalid command\n";
 
@@ -185,7 +189,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
 void Game::PrintItems(Player& player, bool showIfEmpty)
 {
-    const auto itemIDs = areas[player.area]->GetItems(player.cell);
+    const auto& itemIDs = areas[player.area]->GetItems(player.cell);
 
     if (itemIDs.size() == 0 && !showIfEmpty)
     {
@@ -196,7 +200,7 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
     player << "Items:\n";
 
     for (size_t i = 0; i < itemIDs.size(); ++i)
-        player << "- " << i+1 << " - " << items[itemIDs[i]].name << ": " << items[itemIDs[i]].description << "\n";
+        player << "- " << i+1 << " - " << items[itemIDs[i].item].name << ": " << items[itemIDs[i].item].description << " x " << itemIDs[i].number << "\n";
 }
 
 Game::~Game()

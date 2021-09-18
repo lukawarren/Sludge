@@ -158,7 +158,10 @@ void World::Look(Player& player) const
             const int x = worldX+viewX;
             const int y = worldY+viewY;
 
-            if (x >= 0 && y >= 0 && x < width && y < height && GetPortal(y * width + x).has_value())
+            if (viewY == 0 && viewX == 0)
+                player << "X"; // Print player
+            
+            else if (x >= 0 && y >= 0 && x < width && y < height && GetPortal(y * width + x).has_value())
             {
                 // Tile is a portal, render as such
                 player << "C";
@@ -169,7 +172,7 @@ void World::Look(Player& player) const
                 const auto tile = GetTile(x, y);
                 const char buffer[2] =
                 {
-                    (viewY == 0 && viewX == 0) ? 'X' : TileToChar(tile),
+                    TileToChar(tile),
                     '\0'
                 };
 
@@ -185,35 +188,40 @@ void World::Look(Player& player) const
 
 void World::Move(Player& player, const Direction direction, const int distance) const
 {
-    const int worldX = player.cell % width;
-    const int worldY = player.cell / width;
-
     const auto TileIsWalkable = [&](const int x, const int y)
     {
         const auto tile = GetTile(x, y);
         return tile != Tile::None && tile != Tile::Water;
     };
 
-    // Try walking at decreasing distances until successful (or we reach 0)
-    int maxDistance = distance;
-    while (maxDistance > 0)
+    // Try walking until an impassable tile is reached
+    for (int i = 0; i < distance; ++i)
     {
-        if (direction == Direction::Up && TileIsWalkable(worldX, worldY - maxDistance))
-            { player.cell -= width * maxDistance; break; }
-        
-        else if (direction == Direction::Down && TileIsWalkable(worldX, worldY + maxDistance))
-            { player.cell += width * maxDistance; break; }
+        int worldX = player.cell % width;
+        int worldY = player.cell / width;
 
-        else if (direction == Direction::Left && TileIsWalkable(worldX - maxDistance, worldY))
-            { player.cell -= maxDistance; break; }
-
-        else if (direction == Direction::Right && TileIsWalkable(worldX + maxDistance, worldY))
-            { player.cell += maxDistance; break; }
+        if (direction == Direction::Up && TileIsWalkable(worldX, worldY - 1))
+            player.cell -= width;
         
-        else maxDistance--;
+        else if (direction == Direction::Down && TileIsWalkable(worldX, worldY + 1))
+            player.cell += width;
+
+        else if (direction == Direction::Left && TileIsWalkable(worldX - 1, worldY))
+            player.cell -= 1;
+
+        else if (direction == Direction::Right && TileIsWalkable(worldX + 1, worldY))
+            player.cell += 1;
+        
+        else break;
     }
 
     Look(player);
+}
+
+std::vector<ItemStack>& World::GetItems(const Cell cell) const
+{
+    static std::vector<ItemStack> nullVector;
+    return nullVector;
 }
 
 World::Tile World::GetTile(Cell cell) const

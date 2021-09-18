@@ -15,12 +15,15 @@ public:
     void Look(Player& player) const override;
     void Move(Player& player, const Direction direction, const int distance) const override;
 
-    std::vector<ItemID> GetItems(const Cell cell) const override;
+    std::vector<ItemStack>& GetItems(const Cell cell) const override;
 
 private:
     struct Room
     {
         bool present = false;
+        std::vector<ItemStack> items = {
+            { Item::Items::caveMushroom, 1}
+        };
     };
 
     Portal parentPortal;

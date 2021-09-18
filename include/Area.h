@@ -1,5 +1,6 @@
 #pragma once
 #include "Player.h"
+#include "Item.h"
 
 class Area
 {
@@ -27,11 +28,7 @@ public:
     virtual Cell GetStartingCell() const = 0;
     virtual void Look(Player& player) const = 0;
     virtual void Move(Player& player, const Direction direction, const int distance) const = 0;
-    
-    virtual std::vector<ItemID> GetItems(const Cell cell) const
-    {
-        return {};
-    }
+    virtual std::vector<ItemStack>& GetItems(const Cell cell) const = 0;
     
     std::optional<Portal> GetPortal(const Cell cell) const
     {
