@@ -1,0 +1,41 @@
+#pragma once
+#include "Area.h"
+#include "Player.h"
+
+class Game
+{
+public:
+
+    static Game& Get()
+    {
+        // Guaranteed to be instantiated and destroyed by the compiler
+        static Game game;
+        return game;
+    }
+
+    Game(Game const&) = delete;
+    void operator=(Game const&) = delete;
+
+private:
+    Game();
+    ~Game();
+
+public:
+    std::unordered_map<std::string, Player> players;
+    std::vector<Area*> areas;
+    std::string motd;
+
+    Player* AddPlayer(const std::string& name);
+    Player* GetPlayer(const std::string& name);
+
+    AreaID AddArea(Area* area);
+    AreaID GetAreaID(Area* area);
+
+    // Add areas in separate method as they use Game::Get(), and
+    // we can't be referencing ourselves when we're still in the
+    // process of getting created - we'll just get into an infinite
+    // initialisation loop!
+    void LoadAreas();
+
+    bool OnCommand(const std::string& string, Player& player);
+};
