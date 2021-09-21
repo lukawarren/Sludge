@@ -22,7 +22,7 @@ private:
     {
         bool present = false;
         std::vector<ItemStack> items = {
-            { Item::Items::caveMushroom, 1}
+            { Item::Items::CaveMushroom, 1}
         };
     };
 

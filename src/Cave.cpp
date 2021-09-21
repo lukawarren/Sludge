@@ -1,11 +1,12 @@
 #include "Cave.h"
 #include "PerlinNoise.hpp"
 #include "Item.h"
+#include "Game.h"
 
 std::vector<std::string> Cave::descriptions;
 
 Cave::Cave(const int width, const int height, const unsigned int seed, const Portal parentPortal) :
-    parentPortal(parentPortal), width(width), height(height)
+    Area(seed), parentPortal(parentPortal), width(width), height(height)
 {
     // Create empty rooms
     rooms = new Room[width * height];
@@ -13,7 +14,6 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
     // Random-walk to generate cave, starting from centre
     const int numRooms = 5;
     const int steps = 5;
-    srand(seed);
 
     while (1)
     {
@@ -59,7 +59,24 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
         descriptions.push_back(buffer);
 }
 
-void Cave::LoadAreas() {}
+void Cave::LoadAreas()
+{
+    // Add weapons to rooms
+    const int weaponChance = 30;
+
+    for (int i = 0; i < width*height; ++i)
+    {
+        if (rooms[i].present && rand() % 100 <= weaponChance)
+            rooms[i].items.emplace_back
+            (
+                ItemStack 
+                {
+                    GetWeightedRandomItem(Game::Get().weapons),
+                    1
+                }
+            );
+    }
+}
 
 void Cave::Render() const
 {

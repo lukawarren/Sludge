@@ -27,7 +27,6 @@ private:
     Tile* tiles;
     int width;
     int height;
-    int seed;
 
     Tile GetTile(Cell cell) const;
     Tile GetTile(const int x, const int y) const;

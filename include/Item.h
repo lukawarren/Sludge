@@ -4,29 +4,21 @@
 class Item
 {
 public:
-    Item(const std::string& name, const std::string& description, const std::function<void(Player&)> onUse) :
-        name(name), description(description), onUse(onUse) {}
+    Item(const std::string& name, const std::string& description, const int attack = 0) :
+        name(name), description(description), attack(attack) {}
 
     Item() {}
     ~Item() {}
 
     enum Items
     {
-        caveMushroom,
+        CaveMushroom,
         NUM_ITEMS
     };
 
     std::string name;
     std::string description;
-
-    void Use(Player& player) const
-    {
-        onUse(player);
-    }
-
-private:
-    std::function<void(Player&)> onUse;
-
+    int attack;
 };
 
 struct ItemStack

@@ -23,9 +23,11 @@ private:
 
 public:
     std::unordered_map<std::string, Player> players;
-    Item items[Item::Items::NUM_ITEMS];
     std::vector<Area*> areas;
     std::string motd;
+
+    std::vector<Item> items;
+    std::vector<std::vector<ItemID>> weapons;
 
     Player* AddPlayer(const std::string& name);
     Player* GetPlayer(const std::string& name);

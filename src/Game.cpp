@@ -20,11 +20,57 @@ Game::Game()
     motd = ReadFile("motd.txt");
 
     // Create items
-    items[Item::Items::caveMushroom] =
-        Item("Cave Mushroom", "a mushroom found amongst shadows and stone", [](Player& player)
+    items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone"));
+
+    // Weapons
+    const std::vector<std::pair<std::string, std::string>> descriptions =
     {
-        player << "Bob";
-    });
+        { "Broken", "pitiable if nothing else" },
+        { "Rusty", "tetanus might do the trick" },
+        { "Grimy", "in need of a good clean" },
+        { "Grim", "the more you look the worse it becomes" },
+        { "Flimsy", "just don't drop it" },
+        { "Inoffensive", "not likely to inspire much fear" },
+        { "Passable", "good enough to do the job" },
+        { "Pleasing", "rather nice-looking" },
+        { "Gleaming", "surprisingly welll maintained" },
+        { "Refined", "a more sensible option" },
+        { "Sharp", "looking to do some serious business" },
+        { "Threatening", "more than just a suggestion" },
+        { "Terrifying", "the envy of your foes" },
+        { "Deadly", "the nightmare of all who disagree with you" }
+    };
+
+    const std::vector<std::string> nouns =
+    {
+        "Dagger",
+        "Shortsword",
+        "Longsword",
+        "Axe",
+        "Mace"
+    };
+
+    for (size_t description = 0; description < descriptions.size(); ++description)
+    {
+        std::vector<ItemID> descriptionItems;
+        descriptionItems.reserve(nouns.size());
+
+        for (size_t noun = 0; noun < nouns.size(); ++noun)
+        {
+            // Weapons are added, description-wise, in order of rarity
+            items.emplace_back
+            (
+                descriptions[description].first + " " + nouns[noun],
+                descriptions[description].second,
+                noun * 10 + description
+            );
+
+            descriptionItems.emplace_back(items.size()-1);
+        }
+
+        weapons.emplace_back(descriptionItems);
+    }
+
 }
 
 Player* Game::AddPlayer(const std::string& name)
@@ -109,7 +155,6 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else if (command == "look")
     {
         areas[player.area]->Look(player);
-        player << "\n";
         PrintItems(player, false);
     }
 
@@ -141,12 +186,15 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else if (command == "info")
     {
         player << "Name: " << player.name << "\n";
-        player << "Level: " << player.level << "\n";
+        player << "Level: " << player.level << "\n\n";
         player << "Inventory: \n";
 
         for (const auto &[key, value] : player.items)
         {
-            player << "- " << items[key].name << " x " << value << "\n";
+            player << "- " << items[key].name << ": " << items[key].description << " (x" << value << ")\n";
+
+            if (items[key].attack > 0)
+                player << "----> Attack: " << items[key].attack << "\n";
         }
 
         if (player.items.size() == 0) player << "- You have no items\n";
@@ -163,7 +211,6 @@ bool Game::OnCommand(const std::string& string, Player& player)
             player.cell = portal.value().cell.value_or(areas[area]->GetStartingCell());
 
             areas[player.area]->Look(player);
-            player << "\n";
             PrintItems(player, false);
         }
 
@@ -177,10 +224,10 @@ bool Game::OnCommand(const std::string& string, Player& player)
         return false;
     }
 
-    else if (command == "w") { areas[player.area]->Move(player, Area::Direction::Up,    arg.value_or(1)); player << "\n"; PrintItems(player, false); }
-    else if (command == "s") { areas[player.area]->Move(player, Area::Direction::Down,  arg.value_or(1)); player << "\n"; PrintItems(player, false); }
-    else if (command == "a") { areas[player.area]->Move(player, Area::Direction::Left,  arg.value_or(1)); player << "\n"; PrintItems(player, false); }
-    else if (command == "d") { areas[player.area]->Move(player, Area::Direction::Right, arg.value_or(1)); player << "\n"; PrintItems(player, false); }
+    else if (command == "w") { areas[player.area]->Move(player, Area::Direction::Up,    arg.value_or(1)); PrintItems(player, false); }
+    else if (command == "s") { areas[player.area]->Move(player, Area::Direction::Down,  arg.value_or(1)); PrintItems(player, false); }
+    else if (command == "a") { areas[player.area]->Move(player, Area::Direction::Left,  arg.value_or(1)); PrintItems(player, false); }
+    else if (command == "d") { areas[player.area]->Move(player, Area::Direction::Right, arg.value_or(1)); PrintItems(player, false); }
 
     else player << "Unknown or invalid command\n";
 
@@ -191,16 +238,18 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
 {
     const auto& itemIDs = areas[player.area]->GetItems(player.cell);
 
-    if (itemIDs.size() == 0 && !showIfEmpty)
+    if (itemIDs.size() == 0 && !showIfEmpty) return;
+    else if (itemIDs.size() == 0)
     {
         player << "There are no items here\n";
         return;
     }
 
+    if (!showIfEmpty) player << "\n";
     player << "Items:\n";
 
     for (size_t i = 0; i < itemIDs.size(); ++i)
-        player << "- " << i+1 << " - " << items[itemIDs[i].item].name << ": " << items[itemIDs[i].item].description << " x " << itemIDs[i].number << "\n";
+        player << "- " << i+1 << " - " << items[itemIDs[i].item].name << ": " << items[itemIDs[i].item].description << " (x" << itemIDs[i].number << ")\n";
 }
 
 Game::~Game()

@@ -4,7 +4,7 @@
 #include "Game.h"
 #include "Cave.h"
 
-World::World(const int width, const int height, const unsigned int seed) : width(width), height(height), seed(seed)
+World::World(const int width, const int height, const unsigned int seed) : Area(seed), width(width), height(height)
 {
     tiles = new Tile[width * height];
     memset(tiles, ' ', sizeof tiles[0] * width * height);
@@ -46,7 +46,6 @@ World::World(const int width, const int height, const unsigned int seed) : width
 
 void World::LoadAreas()
 {
-    srand(seed);
     int caveSeed = 0;
 
     // Go through each walkable tile and randomly generate caves
