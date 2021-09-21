@@ -1,6 +1,7 @@
 #pragma once
 #include "Player.h"
 #include "Item.h"
+#include "Enemy.h"
 
 class Area
 {
@@ -42,6 +43,17 @@ public:
         return {};
     }
 
+    EnemyInstance* GetEnemy(const Cell cell)
+    {
+        if (enemies.count(cell)) return &enemies.at(cell);
+        return nullptr;
+    }
+
+    void DestroyEnemy(const Cell cell)
+    {
+        enemies.erase(cell);
+    }
+
     ItemID GetWeightedRandomItem(const std::vector<std::vector<ItemID>>& list)
     {
         // Items near the start of the list should be more common and to this end
@@ -57,5 +69,6 @@ public:
 
 protected:
     std::unordered_map<Cell, Portal> portals;
+    std::unordered_map<Cell, EnemyInstance> enemies;
     std::default_random_engine generator;
 };

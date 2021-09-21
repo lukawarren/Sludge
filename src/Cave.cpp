@@ -63,6 +63,7 @@ void Cave::LoadAreas()
 {
     // Add weapons to rooms
     const int weaponChance = 30;
+    const int enemyChance = 10;
 
     for (int i = 0; i < width*height; ++i)
     {
@@ -75,6 +76,9 @@ void Cave::LoadAreas()
                     1
                 }
             );
+
+        if (rooms[i].present && rand() % 100 <= enemyChance)
+            enemies[i] = { Enemy::Enemies::Gremlin, Game::Get().enemies[Enemy::Enemies::Gremlin].maxHealth };
     }
 }
 

@@ -179,7 +179,6 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
     if (command == "help")
     {
-        player << "- attack [enemy] - assault a poor soul\n";
         player << "- wield [item] - equip item for combat\n";
         player << "- look - see surrounding area\n";
         player << "- items - view nearby items\n";
@@ -192,11 +191,6 @@ bool Game::OnCommand(const std::string& string, Player& player)
         player << "- s - move down\n";
         player << "- a - move left\n";
         player << "- d - move right\n";
-    }
-
-    else if (command == "attack")
-    {
-        OnCombat(player, enemies[0]);
     }
 
     else if (command == "wield" && arg.has_value())
@@ -298,6 +292,17 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
     else player << "Unknown or invalid command\n";
 
+    // Player may have moved, or an enemy may have spawned, who cares?
+    // Either way, check if player shares a cell with one
+    EnemyInstance* enemy = areas[player.area]->GetEnemy(player.cell);
+    if (enemy != nullptr)
+    {
+        player << "\n";
+        bool playerDied = OnCombat(player, *enemy);
+        if (!playerDied) areas[player.area]->DestroyEnemy(player.cell);
+        else return false; 
+    }
+
     return true;
 }
 
@@ -319,7 +324,7 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
         player << "- " << i+1 << " - " << items[itemIDs[i].item].name << ": " << items[itemIDs[i].item].description << " (x" << itemIDs[i].number << ")\n";
 }
 
-void Game::OnCombat(Player& player, Enemy& enemy)
+bool Game::OnCombat(Player& player, EnemyInstance& enemyInstance)
 {
     const float damageVariation = 0.2f;
     const int prefixChance = 50;
@@ -331,9 +336,10 @@ void Game::OnCombat(Player& player, Enemy& enemy)
     else
         player << "Empty-handed, you stand there passively";
 
-    player << " against the " << enemy.name << "!\n\n";
+    const auto& enemy = enemies[enemyInstance.enemy];
+    player << " against a " << enemy.name << "!\n\n";
 
-    while (player.health > 0 && enemy.health > 0)
+    while (player.health > 0 && enemyInstance.health > 0)
     {
         const float variation = (
             (float) rand() / (float) RAND_MAX //  0 to 1
@@ -364,10 +370,10 @@ void Game::OnCombat(Player& player, Enemy& enemy)
             player << ". ";
 
             // Actually attack, plus or minus some variation
-            enemy.health -= items[player.weapon.value()].attack * variation;
+            enemyInstance.health -= items[player.weapon.value()].attack * variation;
             
             // Work out how damaged the enemy is
-            float enemyHealthPercent = (float)enemy.health / (float)enemy.maxHealth;
+            float enemyHealthPercent = (float)enemyInstance.health / (float)enemy.maxHealth;
 
             if (enemyHealthPercent > 0.6f)
                 player << attackMinimalDamageDescriptions[rand() % attackMinimalDamageDescriptions.size()];
@@ -441,18 +447,18 @@ void Game::OnCombat(Player& player, Enemy& enemy)
 
     // Print healths
     player << "Your HP: " << player.health << "\n";
-    player << "The " << enemy.name << "'s HP: " << enemy.health << "\n\n";
+    player << "The " << enemy.name << "'s HP: " << enemyInstance.health << "\n\n";
 
     if (player.health < 0)
     { 
         player << "You have finally met a sticky end!\n";
-        // TODO: delete player
+        return true;
     }
 
     else
     {
         player << "The " << enemy.name << " has been slaughtered!\n";
-        // TODO: delete enemy
+        return false;
     }
 }
 

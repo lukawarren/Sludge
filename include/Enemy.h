@@ -11,18 +11,23 @@ public:
     };
 
     Enemy(const std::vector<Attack>& attacks, const std::string& name, int damage, int health) :
-        attacks(attacks), name(name), damage(damage), health(health), maxHealth(health) {};
+        attacks(attacks), name(name), damage(damage), maxHealth(health) {};
     
     ~Enemy() {}
 
     std::vector<Attack> attacks;
     std::string name;
     int damage;
-    int health;
     int maxHealth;
 
     enum Enemies
     {
         Gremlin
     };
+};
+
+struct EnemyInstance
+{
+    EnemyID enemy;
+    int health;
 };

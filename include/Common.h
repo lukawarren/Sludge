@@ -17,3 +17,4 @@
 typedef int Cell;
 typedef size_t AreaID;
 typedef size_t ItemID;
+typedef size_t EnemyID;

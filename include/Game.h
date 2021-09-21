@@ -57,5 +57,5 @@ public:
 
     bool OnCommand(const std::string& string, Player& player);
     void PrintItems(Player& player, bool showIfEmpty);
-    void OnCombat(Player& player, Enemy& enemy);
+    bool OnCombat(Player& player, EnemyInstance& enemy);
 };
