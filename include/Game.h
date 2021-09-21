@@ -2,6 +2,7 @@
 #include "Area.h"
 #include "Item.h"
 #include "Player.h"
+#include "Enemy.h"
 
 class Game
 {
@@ -26,8 +27,9 @@ public:
     std::vector<Area*> areas;
     std::string motd;
 
-    std::vector<Item> items;
     std::vector<std::vector<ItemID>> weapons;
+    std::vector<Enemy> enemies;
+    std::vector<Item> items;
 
     Player* AddPlayer(const std::string& name);
     Player* GetPlayer(const std::string& name);
@@ -43,4 +45,5 @@ public:
 
     bool OnCommand(const std::string& string, Player& player);
     void PrintItems(Player& player, bool showIfEmpty);
+    void OnCombat(Player& player, Enemy& enemy);
 };

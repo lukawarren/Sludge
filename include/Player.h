@@ -4,15 +4,17 @@
 class Player
 {
 public:
-    Player(const std::string& name, unsigned int area, const Cell cell);
-    ~Player();
+    Player(const std::string& name, unsigned int area, const Cell cell) : name(name), level(0), area(area), health(100), cell(cell) {};
+    ~Player() {}
 
     std::string name;
     unsigned int level;
     unsigned int area;
+    int health;
     Cell cell;
 
     std::unordered_map<ItemID, unsigned int> items;
+    std::optional<ItemID> weapon;
     
     std::string outputBuffer;
 
