@@ -1,10 +1,12 @@
 #pragma once
 #include "Common.h"
 
+#define MAX_PLAYER_HEALTH 100
+
 class Player
 {
 public:
-    Player(const std::string& name, unsigned int area, const Cell cell) : name(name), level(0), area(area), health(100), cell(cell) {};
+    Player(const std::string& name, unsigned int area, const Cell cell) : name(name), level(0), area(area), health(MAX_PLAYER_HEALTH), cell(cell) {};
     ~Player() {}
 
     std::string name;

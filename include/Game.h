@@ -30,6 +30,18 @@ public:
     std::vector<std::vector<ItemID>> weapons;
     std::vector<Enemy> enemies;
     std::vector<Item> items;
+    
+    std::vector<std::string> attackVerbs;
+    std::vector<std::string> attackMinimalDamageDescriptions;
+    std::vector<std::string> attackModerateDamageDescriptons;
+    std::vector<std::string> attackMajorDamageDescriptions;
+
+    std::vector<std::string> combatPrefixes;
+    std::vector<std::string> combatObjects;
+    
+    std::vector<std::string> defenceMinimalDamageDescriptions;
+    std::vector<std::string> defenceModerateDamageDescriptons;
+    std::vector<std::string> defenceMajorDamageDescriptions;
 
     Player* AddPlayer(const std::string& name);
     Player* GetPlayer(const std::string& name);

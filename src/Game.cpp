@@ -16,8 +16,35 @@ Game::Game()
         return buffer.str();
     };
 
+    const auto ReadFileLines = [](const std::string& filename)
+    {
+        std::ifstream file("../data/" + filename);
+
+        if (file.fail())
+            std::cerr << "Could not open " << filename << std::endl;
+
+        std::string line;
+        std::vector<std::string> lines;
+        while (std::getline(file, line))
+            lines.emplace_back(line);
+
+        return lines;
+    };
+
     // Load variables
     motd = ReadFile("motd.txt");
+
+    attackVerbs = ReadFileLines("combat/attack/verbs.txt");
+    attackMinimalDamageDescriptions = ReadFileLines("combat/attack/minimal_damages.txt");
+    attackModerateDamageDescriptons = ReadFileLines("combat/attack/moderate_damages.txt");
+    attackMajorDamageDescriptions = ReadFileLines("combat/attack/major_damages.txt");
+
+    combatPrefixes = ReadFileLines("combat/prefixes.txt");
+    combatObjects = ReadFileLines("combat/objects.txt");
+
+    defenceMinimalDamageDescriptions = ReadFileLines("combat/defence/minimal_damages.txt");
+    defenceModerateDamageDescriptons = ReadFileLines("combat/defence/moderate_damages.txt");
+    defenceMajorDamageDescriptions = ReadFileLines("combat/defence/major_damages.txt");
 
     // Create items
     items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone"));
@@ -294,70 +321,25 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
 
 void Game::OnCombat(Player& player, Enemy& enemy)
 {
-    const std::vector<std::string> attackPrefixes =
-    {
-        "With considerable effort,",
-        "Surprisingly gracefully,"
-        "With a sudden jolt",
-        "Terrified",
-        "Unfazed"
-    };
-
-    const std::vector<std::string> attackVerbs =
-    {
-        "bludgeon",
-        "whack",
-        "smack",
-        "whallop",
-        "batter",
-        "bruise",
-        "move to eviscerate",
-    };
-
-    const std::vector<std::string> attackObjects
-    {
-        "it",
-        "the poor thing",
-        "the sucker",
-        "the creature",
-    };
-
-    const std::vector<std::string> minimalDamageDescriptions =
-    {
-        "It looks much the same as before.",
-        "You hardly notice a difference.",
-        "Did that do anything?"
-    };
-
-    const std::vector<std::string> moderateDamageDescriptons =
-    {
-        "It looks bruised now.",
-        "The scoundrel whinces in pain!",
-        "You see a few cuts here and there.",
-        "Vengance shall be yours!",
-        "It teeters slightly."
-    };
-
-    const std::vector<std::string> majorDamageDescriptions =
-    {
-        "You see its insides slop to the floor somewhat.",
-        "A few limbs appear to have been misplaced.",
-        "There isn't much more there than a grim oozing mess.",
-        "It's hard to say where one slash began and and another ended..."
-    };
-
     const float damageVariation = 0.2f;
     const int prefixChance = 50;
     const int objectChance = 50;
     bool playersTurn = true;
 
     if (player.weapon.has_value())
-        player << "You ready your " << items[player.weapon.value()].name << "\n";
+        player << "You ready your " << items[player.weapon.value()].name << "";
     else
-        player << "Empty-handed, you stand there passively.\n";
+        player << "Empty-handed, you stand there passively";
+
+    player << " against the " << enemy.name << "!\n\n";
 
     while (player.health > 0 && enemy.health > 0)
     {
+        const float variation = (
+            (float) rand() / (float) RAND_MAX //  0 to 1
+            * 2.0f - 1.0f                     // -1 to 1
+        )   * damageVariation + 1.0f;         // -whatever to +whatever
+
         if (playersTurn && player.weapon.has_value())
         {
             player << "- ";
@@ -365,7 +347,7 @@ void Game::OnCombat(Player& player, Enemy& enemy)
             // Prefix
             if (rand() % 100 <= prefixChance)
             {
-                player << attackPrefixes[rand() % attackPrefixes.size()];
+                player << combatPrefixes[rand() % combatPrefixes.size()];
                 player << " you ";
             }
             else player << "You ";
@@ -375,45 +357,101 @@ void Game::OnCombat(Player& player, Enemy& enemy)
 
             // Object
             if (rand() % 100 <= objectChance)
-                player << attackObjects[rand() % attackObjects.size()];
+                player << combatObjects[rand() % combatObjects.size()];
             else
                 player << "the " << enemy.name;
+            
+            player << ". ";
 
             // Actually attack, plus or minus some variation
-            const float variation =
-                (
-                    (float) rand() / (float) RAND_MAX //  0 to 1
-                    * 2.0f - 1.0f                     // -1 to 1
-                ) 
-                * damageVariation + 1.0f;             // -whatever to +whatever
-            
             enemy.health -= items[player.weapon.value()].attack * variation;
-            player << ". ";
             
             // Work out how damaged the enemy is
             float enemyHealthPercent = (float)enemy.health / (float)enemy.maxHealth;
 
             if (enemyHealthPercent > 0.6f)
-                player << minimalDamageDescriptions[rand() % minimalDamageDescriptions.size()];
+                player << attackMinimalDamageDescriptions[rand() % attackMinimalDamageDescriptions.size()];
             
             else if (enemyHealthPercent > 0.3f)
-                player << moderateDamageDescriptons[rand() % moderateDamageDescriptons.size()];
+                player << attackModerateDamageDescriptons[rand() % attackModerateDamageDescriptons.size()];
                 
             else
-                player << majorDamageDescriptions[rand() % majorDamageDescriptions.size()];
+                player << attackMajorDamageDescriptions[rand() % attackMajorDamageDescriptions.size()];
 
             player << "\n";
         }
+
+        else
+        {
+            player << "- ";
+
+            // Prefix
+            if (rand() % 100 <= prefixChance)
+            {
+                player << combatPrefixes[rand() % combatPrefixes.size()];
+
+                // Object
+                if (rand() % 100 <= objectChance)
+                    player << " " << combatObjects[rand() % combatObjects.size()];
+                else
+                    player << " the " << enemy.name;
+            }
+            else
+            {
+                // As above but capitalise
+                if (rand() % 100 <= objectChance)
+                {
+                    std::string object = combatObjects[rand() % combatObjects.size()];
+                    object.data()[0] = toupper(object.data()[0]);
+                    player << object;
+                }
+                else
+                {
+                    player << "The " << enemy.name;
+                }
+            }
+
+            // Verb
+            const auto& attack = enemy.attacks[rand() % enemy.attacks.size()];
+            const auto& verb = attack.verbs[rand() % attack.verbs.size()];
+            player << " " << verb << " you with its " << attack.limb << ". ";
+
+            // Actually attack, plus or minus some variation
+            player.health -= enemy.damage * variation;
+
+            // Damage message
+            const float damagePercent = (float) player.health / (float) MAX_PLAYER_HEALTH;
+
+            if (damagePercent > 0.6f)
+                player << defenceMinimalDamageDescriptions[rand() % defenceMinimalDamageDescriptions.size()];
+            
+            else if (damagePercent > 0.3f)
+                player << defenceModerateDamageDescriptons[rand() % defenceModerateDamageDescriptons.size()];
+                
+            else
+                player << defenceMajorDamageDescriptions[rand() % defenceMajorDamageDescriptions.size()];
+
+            player << "\n";
+        }
+
+        playersTurn = !playersTurn;
     }
+
+    player << "\n";
+
+    // Print healths
+    player << "Your HP: " << player.health << "\n";
+    player << "The " << enemy.name << "'s HP: " << enemy.health << "\n\n";
 
     if (player.health < 0)
     { 
-        // TODO: kill player and delete from server
+        player << "You have finally met a sticky end!\n";
+        // TODO: delete player
     }
 
     else
     {
-        player << "The " << enemy << " has been slaughtered!\n";
+        player << "The " << enemy.name << " has been slaughtered!\n";
         // TODO: delete enemy
     }
 }

@@ -7,7 +7,7 @@ public:
     struct Attack
     {
         std::vector<std::string> verbs;
-        std::string limbs;
+        std::string limb;
     };
 
     Enemy(const std::vector<Attack>& attacks, const std::string& name, int damage, int health) :
