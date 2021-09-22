@@ -47,16 +47,7 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
     portals[GetStartingCell()] = parentPortal;
 
     // Load descriptions if need be
-    if (descriptions.size() > 0) return;
-
-    std::ifstream file("../data/caves.txt");
-
-    if (file.fail())
-        std::cerr << "Could not open cave descriptions (caves.txt)!" << std::endl;
-
-    std::string buffer;
-    while (std::getline(file, buffer))
-        descriptions.push_back(buffer);
+    if (descriptions.size() == 0) descriptions = Game::Get().ReadLines("caves.txt");
 }
 
 void Cave::LoadAreas()
@@ -80,32 +71,6 @@ void Cave::LoadAreas()
         if (rooms[i].present && rand() % 100 <= enemyChance)
             enemies[i] = { Enemy::Enemies::Gremlin, Game::Get().enemies[Enemy::Enemies::Gremlin].maxHealth };
     }
-}
-
-void Cave::Render() const
-{
-    const auto DrawEdge = [&]()
-    {
-        for (int i = 0; i < width+2; ++i) std::cout << "#";
-        std::cout << std::endl;
-    };
-
-    DrawEdge();
-
-    for (int y = 0; y < height; ++y)
-    {
-        std::cout << "#";
-
-        for (int x = 0; x < width; ++x)
-        {
-            if (rooms[y * width + x].present) std::cout << "X";
-            else std::cout << " ";
-        }
-
-        std::cout << "#" << std::endl;
-    }
-
-    DrawEdge();
 }
 
 Cell Cave::GetStartingCell() const
@@ -190,6 +155,11 @@ void Cave::Move(Player& player, const Direction direction, const int distance) c
 std::vector<ItemStack>& Cave::GetItems(const Cell cell) const
 {
     return rooms[cell].items;
+}
+
+std::string Cave::GetPortalText() const
+{
+    return "You stand amidst the enterance of a mysterious cave...";
 }
 
 bool Cave::IsValid(const int x, const int y) const

@@ -30,12 +30,12 @@ public:
 
     virtual ~Area() {}
     virtual void LoadAreas() = 0;
-
-    virtual void Render() const = 0;
+    
     virtual Cell GetStartingCell() const = 0;
     virtual void Look(Player& player) const = 0;
     virtual void Move(Player& player, const Direction direction, const int distance) const = 0;
     virtual std::vector<ItemStack>& GetItems(const Cell cell) const = 0;
+    virtual std::string GetPortalText() const = 0;
     
     std::optional<Portal> GetPortal(const Cell cell) const
     {

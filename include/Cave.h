@@ -9,13 +9,11 @@ public:
     ~Cave();
 
     void LoadAreas() override;
-    void Render() const override;
     Cell GetStartingCell() const override;
-    
     void Look(Player& player) const override;
     void Move(Player& player, const Direction direction, const int distance) const override;
-
     std::vector<ItemStack>& GetItems(const Cell cell) const override;
+    std::string GetPortalText() const override;
 
 private:
     struct Room

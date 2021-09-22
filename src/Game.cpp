@@ -4,47 +4,20 @@
 
 Game::Game()
 {
-    const auto ReadFile = [](const std::string& filename)
-    {
-        std::ifstream file("../data/" + filename);
-
-        if (file.fail())
-            std::cerr << "Could not open " << filename << std::endl;
-
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        return buffer.str();
-    };
-
-    const auto ReadFileLines = [](const std::string& filename)
-    {
-        std::ifstream file("../data/" + filename);
-
-        if (file.fail())
-            std::cerr << "Could not open " << filename << std::endl;
-
-        std::string line;
-        std::vector<std::string> lines;
-        while (std::getline(file, line))
-            lines.emplace_back(line);
-
-        return lines;
-    };
-
     // Load variables
     motd = ReadFile("motd.txt");
 
-    attackVerbs = ReadFileLines("combat/attack/verbs.txt");
-    attackMinimalDamageDescriptions = ReadFileLines("combat/attack/minimal_damages.txt");
-    attackModerateDamageDescriptons = ReadFileLines("combat/attack/moderate_damages.txt");
-    attackMajorDamageDescriptions = ReadFileLines("combat/attack/major_damages.txt");
+    attackVerbs = ReadLines("combat/attack/verbs.txt");
+    attackMinimalDamageDescriptions = ReadLines("combat/attack/minimal_damages.txt");
+    attackModerateDamageDescriptons = ReadLines("combat/attack/moderate_damages.txt");
+    attackMajorDamageDescriptions = ReadLines("combat/attack/major_damages.txt");
 
-    combatPrefixes = ReadFileLines("combat/prefixes.txt");
-    combatObjects = ReadFileLines("combat/objects.txt");
+    combatPrefixes = ReadLines("combat/prefixes.txt");
+    combatObjects = ReadLines("combat/objects.txt");
 
-    defenceMinimalDamageDescriptions = ReadFileLines("combat/defence/minimal_damages.txt");
-    defenceModerateDamageDescriptons = ReadFileLines("combat/defence/moderate_damages.txt");
-    defenceMajorDamageDescriptions = ReadFileLines("combat/defence/major_damages.txt");
+    defenceMinimalDamageDescriptions = ReadLines("combat/defence/minimal_damages.txt");
+    defenceModerateDamageDescriptons = ReadLines("combat/defence/moderate_damages.txt");
+    defenceMajorDamageDescriptions = ReadLines("combat/defence/major_damages.txt");
 
     // Create items
     items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone"));
@@ -113,6 +86,33 @@ Game::Game()
 
 }
 
+std::string Game::ReadFile(const std::string& filename) const
+{
+    std::ifstream file("../data/" + filename);
+
+    if (file.fail())
+        std::cerr << "Could not open " << filename << std::endl;
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+std::vector<std::string> Game::ReadLines(const std::string& filename) const
+{
+    std::ifstream file("../data/" + filename);
+
+    if (file.fail())
+        std::cerr << "Could not open " << filename << std::endl;
+
+    std::string line;
+    std::vector<std::string> lines;
+    while (std::getline(file, line))
+        lines.emplace_back(line);
+
+    return lines;
+}
+
 Player* Game::AddPlayer(const std::string& name)
 {
     if (players.count(name)) return nullptr;
@@ -146,7 +146,7 @@ AreaID Game::GetAreaID(Area* area)
 void Game::LoadAreas()
 {
     AddArea(new World(64, 32, 123));
-    areas[0]->Render();
+    ((World*)areas[0])->Render();
     std::cout << "Game loaded" << std::endl;
 }
 

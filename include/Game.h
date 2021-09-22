@@ -43,6 +43,9 @@ public:
     std::vector<std::string> defenceModerateDamageDescriptons;
     std::vector<std::string> defenceMajorDamageDescriptions;
 
+    std::string ReadFile(const std::string& filename) const;
+    std::vector<std::string> ReadLines(const std::string& filename) const;
+
     Player* AddPlayer(const std::string& name);
     Player* GetPlayer(const std::string& name);
 

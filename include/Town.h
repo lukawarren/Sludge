@@ -2,19 +2,11 @@
 #include "Common.h"
 #include "Area.h"
 
-class World : public Area
+class Town : public Area
 {
 public:
-    World(const int width, const int height, const unsigned int seed);
-    ~World();
-
-    enum Tile : char
-    {
-        Grass,
-        Water,
-        Rock,
-        None
-    };
+    Town(const unsigned int seed, const Portal parentPortal);
+    ~Town();
 
     void LoadAreas() override;
     Cell GetStartingCell() const override;
@@ -23,16 +15,20 @@ public:
     std::vector<ItemStack>& GetItems(const Cell cell) const override;
     std::string GetPortalText() const override;
 
-    void Render() const;
-
 private:
-    Tile* tiles;
+    struct TownCell
+    {
+        bool present = false;
+        std::vector<ItemStack> items = {};
+    };
+
+    Portal parentPortal;
+    std::string name;
+    TownCell* cells;
     int width;
     int height;
 
-    Tile GetTile(Cell cell) const;
-    Tile GetTile(const int x, const int y) const;
+    static std::vector<std::string> names;
 
-    char TileToChar(const Tile t) const;
-    std::string TileToString(const Tile t) const;
+    bool IsValid(const int x, const int y) const;
 };

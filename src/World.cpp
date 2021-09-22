@@ -3,6 +3,7 @@
 #include "PerlinNoise.hpp"
 #include "Game.h"
 #include "Cave.h"
+#include "Town.h"
 
 World::World(const int width, const int height, const unsigned int seed) : Area(seed), width(width), height(height)
 {
@@ -46,76 +47,49 @@ World::World(const int width, const int height, const unsigned int seed) : Area(
 
 void World::LoadAreas()
 {
-    int caveSeed = 0;
+    const int caveChance = 5;
+    const int townChance = 5;
 
-    // Go through each walkable tile and randomly generate caves
+    unsigned int caveSeed = 0;
+    unsigned int townSeed = 0;
+
+    // Go through each walkable tile and randomly generate caves and towns
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
         {
-            if (rand() % 100 > 95)
-            {
-                const auto cell = y * width + x;
-                if (GetTile(cell) == Tile::Water) continue;
+            const auto cell = y * width + x;
+            if (GetTile(cell) == Tile::Water) continue;
 
-                auto caveArea = Game::Get().AddArea
+            const Portal portal = {
+                Game::Get().GetAreaID(this),    // Exit area
+                cell                            // Exit cell
+            };
+
+            if (rand() % 100 <= caveChance)
+            {
+                const auto caveArea = Game::Get().AddArea
                 (
                     new Cave
                     (
                         10,                                 // Width
                         10,                                 // Height
                         ++caveSeed,                         // Seed
-                        {
-                            Game::Get().GetAreaID(this),    // Exit area
-                            cell                            // Exit cell
-                        }
+                        portal
                     )
                 );
 
                 // Add enterance
                 portals[cell] = { caveArea };
             }
-        }
-    }
-}
 
-void World::Render() const
-{
-    // Top and bottom borders; add 2 to account for left and right borders below
-    const auto DrawEdge = [&]()
-    {
-        for (int i = 0; i < width+2; ++i) std::cout << "#";
-        std::cout << std::endl;
-    };
-
-    DrawEdge();
-
-    for (int y = 0; y < height; ++y)
-    {
-        std::cout << "#";
-
-        for (int x = 0; x < width; ++x)
-        {
-            const auto cell = y * width + x;
-            const auto portal = GetPortal(cell);
-            
-            if (portal.has_value())
+            else if (rand() % 100 <= townChance)
             {
-                // Tile is a portal
-                std::cout << "C";
-            }
-            else
-            {
-                // Tile is normal, render as per usual
-                const auto tile = tiles[cell];
-                std::cout << TileToChar(tile);
+                const auto town = Game::Get().AddArea(new Town(++townSeed, portal));
+                portals[cell] = { town };
             }
         }
-
-        std::cout << "#" << std::endl;
     }
-
-    DrawEdge();
 }
 
 Cell World::GetStartingCell() const
@@ -133,7 +107,7 @@ void World::Look(Player& player) const
     // Notify player of portals
     const auto portal = GetPortal(player.cell);
     if (portal.has_value())
-        player << "- You stand amidst the enterance of a mysterious cave...\n";
+        player << "- " << Game::Get().areas[portal.value().area]->GetPortalText() << "\n";
 
     const int viewWidth = 10;
     const int viewHeight = 5;
@@ -163,7 +137,7 @@ void World::Look(Player& player) const
             else if (x >= 0 && y >= 0 && x < width && y < height && GetPortal(y * width + x).has_value())
             {
                 // Tile is a portal, render as such
-                player << "C";
+                player << "?";
             }
             else
             {
@@ -223,6 +197,8 @@ std::vector<ItemStack>& World::GetItems(const Cell cell) const
     return nullVector;
 }
 
+std::string World::GetPortalText() const { return ""; }
+
 World::Tile World::GetTile(Cell cell) const
 {
     bool validPosition = (cell >= 0 && cell < width*height);
@@ -266,6 +242,45 @@ std::string World::TileToString(const Tile t) const
         case World::Tile::None:  return " ";
         default:                 return "Unknown";
     }
+}
+
+void World::Render() const
+{
+    // Top and bottom borders; add 2 to account for left and right borders below
+    const auto DrawEdge = [&]()
+    {
+        for (int i = 0; i < width+2; ++i) std::cout << "#";
+        std::cout << std::endl;
+    };
+
+    DrawEdge();
+
+    for (int y = 0; y < height; ++y)
+    {
+        std::cout << "#";
+
+        for (int x = 0; x < width; ++x)
+        {
+            const auto cell = y * width + x;
+            const auto portal = GetPortal(cell);
+            
+            if (portal.has_value())
+            {
+                // Tile is a portal
+                std::cout << "?";
+            }
+            else
+            {
+                // Tile is normal, render as per usual
+                const auto tile = tiles[cell];
+                std::cout << TileToChar(tile);
+            }
+        }
+
+        std::cout << "#" << std::endl;
+    }
+
+    DrawEdge();
 }
 
 World::~World()
