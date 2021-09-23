@@ -4,8 +4,8 @@
 class Item
 {
 public:
-    Item(const std::string& name, const std::string& description, const int attack = 1) :
-        name(name), description(description), attack(attack) {}
+    Item(const std::string& name, const std::string& description, const int price, const int attack = 1) :
+        name(name), description(description), price(price), attack(attack) {}
 
     Item() {}
     ~Item() {}
@@ -18,6 +18,7 @@ public:
 
     std::string name;
     std::string description;
+    int price;
     int attack;
 };
 

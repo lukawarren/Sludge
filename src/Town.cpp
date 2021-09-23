@@ -27,7 +27,7 @@ Town::Town(const unsigned int seed, const Portal parentPortal) :
     portals[origin] = parentPortal;
 
     // Load names if need be then pick one, before removing it to avoid duplicates
-    if (names.size() == 0) names = Game::Get().ReadLines("towns.txt"); // TODO: remove Game::Get()
+    if (names.size() == 0) names = ReadLines("towns.txt");
     
     const size_t index = rand() % names.size();
     name = names[index];
@@ -44,7 +44,7 @@ void Town::LoadAreas()
         width/2                         // Exit cell
     };
 
-    portals[width/2] = Portal { Game::Get().AddArea(new Building(0, portal)) };
+    portals[width/2] = Portal { Game::Get().AddArea(new Building(rand(), portal)) };
 }
 
 Cell Town::GetStartingCell() const
@@ -66,7 +66,7 @@ void Town::Look(Player& player) const
     }
 
     else if (portal.has_value())
-        player << "- " << Game::Get().areas[portal.value().area]->GetPortalText() << "\n\n";
+        player << "- " << Game::Get().areas[portal->area]->GetPortalText() << "\n\n";
 
     player << "A path stretches out in each of these directions:\n";
 

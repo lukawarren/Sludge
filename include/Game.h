@@ -25,7 +25,9 @@ private:
 public:
     std::unordered_map<std::string, Player> players;
     std::vector<Area*> areas;
+
     std::string motd;
+    std::vector<std::string> vendorNames;
 
     std::vector<std::vector<ItemID>> weapons;
     std::vector<Enemy> enemies;
@@ -42,9 +44,6 @@ public:
     std::vector<std::string> defenceMinimalDamageDescriptions;
     std::vector<std::string> defenceModerateDamageDescriptons;
     std::vector<std::string> defenceMajorDamageDescriptions;
-
-    std::string ReadFile(const std::string& filename) const;
-    std::vector<std::string> ReadLines(const std::string& filename) const;
 
     Player* AddPlayer(const std::string& name);
     Player* GetPlayer(const std::string& name);

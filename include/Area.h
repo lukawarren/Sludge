@@ -2,6 +2,7 @@
 #include "Player.h"
 #include "Item.h"
 #include "Enemy.h"
+#include "Vendor.h"
 
 class Area
 {
@@ -43,6 +44,12 @@ public:
         return {};
     }
 
+    Vendor* GetVendor(const Cell cell)
+    {
+        if (vendors.count(cell)) return &vendors.at(cell);
+        return {};
+    }
+
     EnemyInstance* GetEnemy(const Cell cell)
     {
         if (enemies.count(cell)) return &enemies.at(cell);
@@ -69,6 +76,7 @@ public:
 
 protected:
     std::unordered_map<Cell, Portal> portals;
+    std::unordered_map<Cell, Vendor> vendors;
     std::unordered_map<Cell, EnemyInstance> enemies;
     std::default_random_engine generator;
 };

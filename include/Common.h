@@ -18,3 +18,6 @@ typedef int Cell;
 typedef size_t AreaID;
 typedef size_t ItemID;
 typedef size_t EnemyID;
+
+std::string ReadFile(const std::string& filename);
+std::vector<std::string> ReadLines(const std::string& filename);

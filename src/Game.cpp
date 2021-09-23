@@ -20,7 +20,7 @@ Game::Game()
     defenceMajorDamageDescriptions = ReadLines("combat/defence/major_damages.txt");
 
     // Create items
-    items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone"));
+    items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone", 5));
 
     // Weapons
     const std::vector<std::pair<std::string, std::string>> descriptions =
@@ -58,11 +58,13 @@ Game::Game()
         for (size_t noun = 0; noun < nouns.size(); ++noun)
         {
             // Weapons are added, description-wise, in order of rarity
+            const int attack = noun * 10 + description;
             items.emplace_back
             (
                 descriptions[description].first + " " + nouns[noun],
                 descriptions[description].second,
-                noun * 10 + description
+                10 * attack,
+                attack
             );
 
             descriptionItems.emplace_back(items.size()-1);
@@ -84,33 +86,6 @@ Game::Game()
         "Gremlin", 30, 80
     );
 
-}
-
-std::string Game::ReadFile(const std::string& filename) const
-{
-    std::ifstream file("../data/" + filename);
-
-    if (file.fail())
-        std::cerr << "Could not open " << filename << std::endl;
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-std::vector<std::string> Game::ReadLines(const std::string& filename) const
-{
-    std::ifstream file("../data/" + filename);
-
-    if (file.fail())
-        std::cerr << "Could not open " << filename << std::endl;
-
-    std::string line;
-    std::vector<std::string> lines;
-    while (std::getline(file, line))
-        lines.emplace_back(line);
-
-    return lines;
 }
 
 Player* Game::AddPlayer(const std::string& name)
@@ -184,6 +159,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
         player << "- look - see surrounding area\n";
         player << "- items - view nearby items\n";
         player << "- get [item] - pickup item\n";
+        player << "- browse - browse vendor's items\n";
+        player << "- buy [item] - buy vendor's item\n";
+        player << "- sell [item] - sell vendor's item\n";
         player << "- info - view player stats\n";
         player << "- move - move to new area\n";
         player << "- quit - disconnect\n";
@@ -197,14 +175,18 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else if (command == "wield" && arg.has_value())
     {
         // Check item ID is valid
-        if ((unsigned int) arg.value() > player.items.size()) player << "You have no such item\n";
+        if ((unsigned int) arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
         else
         {
             // Find Nth item and equip
             int i = 1;
-            for (const auto &[key, value] : player.items)
+            for (const auto& [key, value] : player.items)
             {
-                if (i == arg.value()) player.weapon = key;
+                if (i == arg.value())
+                {
+                    player.weapon = key;
+                    player << "You now wield a " << items[key].name << "\n";
+                }
                 i++;
             }
         }
@@ -226,31 +208,223 @@ bool Game::OnCommand(const std::string& string, Player& player)
         auto& itemStacks = areas[player.area]->GetItems(player.cell);
 
         // Check item ID and args exists
-        if ((unsigned int)arg.value() <= itemStacks.size())
+        if ((unsigned int)arg.value() <= itemStacks.size() && arg.value() != 0)
         {
             // Give item to player
             const auto itemID = itemStacks[arg.value()-1].item;
             const auto amount = itemStacks[arg.value()-1].number;
             player.items[itemID] += amount;
-            player << "You pick up a " << items[itemID].name << " (x" << amount << ")\n";
+            player << "You pick up a " << items[itemID].name << "\n";
 
             // Remove item from area
-            itemStacks.erase(itemStacks.begin() + arg.value()-1);
+            if (itemStacks[arg.value()-1].number > 1)
+                itemStacks[arg.value()-1].number--;
+            else
+                itemStacks.erase(itemStacks.begin() + arg.value()-1);
         }
         else
             player << "That item does not exist here\n";
     }
 
+    else if (command == "browse")
+    {
+        const auto& vendor = areas[player.area]->GetVendor(player.cell);
+        if (vendor == nullptr) player << "No vendor will serve you here\n";
+        else
+        {
+            // Dimensions
+            std::pair<unsigned int, unsigned int> idWidth          = { 5,  10 }; // Current, maximum
+            std::pair<unsigned int, unsigned int> nameWidth        = { 10, 30 }; // Current, maximum
+            std::pair<unsigned int, unsigned int> descriptionWidth = { 11, 40 }; // Current, maximum
+            std::pair<unsigned int, unsigned int> attackWidth      = { 6,  10 }; // Current, maximum
+            std::pair<unsigned int, unsigned int> priceWidth       = { 5,  10 }; // Current, maximum
+            std::pair<unsigned int, unsigned int> countWidth       = { 5,  10 }; // Current, maximum
+
+            for (size_t i = 0; i < vendor->items.size(); ++i)
+            {
+                const auto& itemStack = vendor->items[i];
+                const std::string& name = items[itemStack.item].name;
+                const std::string& description = items[itemStack.item].description;
+                const auto attack = items[itemStack.item].attack;
+                const auto price = items[itemStack.item].price;
+
+                if (i / 10 > idWidth.first && i / 10 < idWidth.second)
+                    idWidth.first = i / 10;
+
+                if (name.length() > nameWidth.first && name.length() < nameWidth.second)
+                    nameWidth.first = name.length();
+
+                if (description.length() > descriptionWidth.first && description.length() < descriptionWidth.second)
+                    descriptionWidth.first = description.length();
+                
+                if (attack / 10 > (int) attackWidth.first && attack / 10 < (int) attackWidth.second)
+                    attackWidth.first = attack / 10;
+
+                if (price / 10 > (int) priceWidth.first && price / 10 < (int) priceWidth.second)
+                    priceWidth.first = price / 10;
+
+                if (itemStack.number / 10 > countWidth.first && itemStack.number / 10 < countWidth.second)
+                    countWidth.first = itemStack.number / 10;
+            }
+
+            const auto PrintHeading = [&](const std::string& heading, const unsigned int width)
+            {
+                player << "| ";
+
+                if (heading.size() < width)
+                    for (size_t i = 0; i < (width - heading.size()) / 2; ++i) player << " ";
+
+                player << heading;
+
+                // Funky maths to avoid the half flooring our value on odd widths
+                if (heading.size() + 1 < width)
+                    for (size_t i = 0; i < (width - heading.size() + 1) / 2; ++i) player << " ";
+
+                player << " ";
+            };
+
+            // Headings
+            PrintHeading("Id", idWidth.first);
+            PrintHeading("Name", nameWidth.first);
+            PrintHeading("Description", descriptionWidth.first);
+            PrintHeading("Attack", attackWidth.first);
+            PrintHeading("Price", priceWidth.first);
+            PrintHeading("Count", countWidth.first);
+            player << "|\n";
+
+            // Data
+            const auto PrintString = [&](const std::string& string, const unsigned int maxWidth)
+            {
+                // Cut-off if too long
+                char shortened[maxWidth+1] = {};
+                if (string.size() >= maxWidth)
+                {
+                    strncpy(shortened, string.c_str(), maxWidth-3);
+                    shortened[maxWidth - 1] = '.';
+                    shortened[maxWidth - 2] = '.';
+                    shortened[maxWidth - 3] = '.';
+                }
+                else strncpy(shortened, string.c_str(), string.size()+1); // +1 for null terminator
+
+                // Centre
+                const size_t length = strlen(shortened);
+                for (size_t i = 0; i < (maxWidth - length) / 2; ++i)
+                    player << " ";
+
+                player << shortened;
+
+                // Centre again (funky maths, see above)
+                for (size_t i = 0; i < (maxWidth - length + 1) / 2; ++i)
+                    player << " ";
+            };
+
+            for (size_t i = 0; i < vendor->items.size(); ++i)
+            {
+                const auto& itemStack = vendor->items[i];
+                const std::string& name = items[itemStack.item].name;
+                const std::string& description = items[itemStack.item].description;
+                const auto attack = items[itemStack.item].attack;
+                const auto price = items[itemStack.item].price;
+
+                player << "| ";
+                PrintString(std::to_string(i+1), idWidth.first);                                player << " | ";
+                PrintString(name, nameWidth.first);                                             player << " | ";
+                PrintString(description, descriptionWidth.first);                               player << " | ";
+                PrintString(attack > 1 ? std::to_string(attack) : "None", attackWidth.first);   player << " | ";
+                PrintString(std::to_string(price), priceWidth.first);                           player << " | ";
+                PrintString(std::to_string(itemStack.number), countWidth.first);
+                player << " |\n";
+            }
+        }
+    }
+
+    else if (command == "buy" && arg.has_value())
+    {
+        // Check for vendor
+        Vendor* vendor = areas[player.area]->GetVendor(player.cell);
+        if (vendor == nullptr) player << "No vendor will serve you here\n";
+
+        else
+        {
+            // Check for valid item
+            if ((unsigned int)arg.value() > vendor->items.size() || arg.value() == 0) player << "There is no such item\n";
+
+            else
+            {
+                // Check for enough money
+                auto& itemStack = vendor->items[arg.value() - 1];
+                const auto& item = items[itemStack.item];
+
+                if (item.price > player.money) player << "You haven't the money\n";
+                else
+                {
+                    // Give to player...
+                    player.items[itemStack.item]++;
+                    player.money -= item.price;
+                    player << "You buy the " << item.name << " for " << item.price << " gold\n";
+
+                    // ...and take from vendor
+                    vendor->RemoveItem(arg.value() - 1);
+                }
+            }
+        }
+    }
+
+    else if (command == "sell" && arg.has_value())
+    {
+        // Check for vendor
+        Vendor* vendor = areas[player.area]->GetVendor(player.cell);
+        if (vendor == nullptr) player << "No vendor will serve you here\n";
+
+        else
+        {
+            // Check for valid item
+            if ((unsigned int)arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
+
+            else
+            {
+                // Find item
+                ItemID itemID;
+                int i = 1;
+
+                for (const auto& [key, value] : player.items)
+                {
+                    if (i++ == arg.value())
+                        itemID = key;
+                }
+
+                // Give to vendor and take from player
+                vendor->AddItem(itemID);
+                player.money += items[itemID].price;
+                if (player.items[itemID] > 1) player.items[itemID]--;
+                else
+                {
+                    player.items.erase(itemID);
+
+                    // If item was wielded, unweild
+                    if (player.weapon == itemID) player.weapon.reset();
+                }
+
+                player << "You sell the " << items[itemID].name << " for " << items[itemID].price << " gold\n";
+            }
+        }
+    }
+
     else if (command == "info")
     {
         player << "Name: " << player.name << "\n";
-        player << "Level: " << player.level << "\n\n";
+        player << "Level: " << player.level << "\n";
+        player << "Gold: " << player.money << "\n\n";
         player << "Inventory: \n";
 
-        int i = 1;
-        for (const auto &[key, value] : player.items)
+        size_t i = 1;
+        for (const auto& [key, value] : player.items)
         {
+            if (i != 1) player << "\n"; // Padding
+
             player << "- " << i++ << " - " << items[key].name << ": " << items[key].description << " (x" << value << ")\n";
+
+            player << "----> Value: " << items[key].price << "\n";
 
             if (items[key].attack > 1)
                 player << "----> Attack: " << items[key].attack << "\n";
@@ -268,9 +442,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
         const auto portal = areas[player.area]->GetPortal(player.cell);
         if (portal.has_value())
         {
-            const auto area = portal.value().area;
+            const auto area = portal->area;
             player.area = area;
-            player.cell = portal.value().cell.value_or(areas[area]->GetStartingCell());
+            player.cell = portal->cell.value_or(areas[area]->GetStartingCell());
 
             areas[player.area]->Look(player);
             PrintItems(player, false);
@@ -322,7 +496,17 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
     player << "Items:\n";
 
     for (size_t i = 0; i < itemIDs.size(); ++i)
-        player << "- " << i+1 << " - " << items[itemIDs[i].item].name << ": " << items[itemIDs[i].item].description << " (x" << itemIDs[i].number << ")\n";
+    {
+        if (i != 1) player << "\n"; // Padding
+
+        const auto& item = items[itemIDs[i].item];
+        player << "- " << i+1 << " - " << item.name << ": " << item.description << " (x" << itemIDs[i].number << ")\n";
+        
+        if (item.attack > 1)
+            player << "----> Attack: " << item.attack << "\n";
+
+        player << "----> Value: " << item.price << "\n";
+    }
 }
 
 bool Game::OnCombat(Player& player, EnemyInstance& enemyInstance)

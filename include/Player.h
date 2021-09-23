@@ -6,13 +6,14 @@
 class Player
 {
 public:
-    Player(const std::string& name, unsigned int area, const Cell cell) : name(name), level(0), area(area), health(MAX_PLAYER_HEALTH), cell(cell) {};
+    Player(const std::string& name, unsigned int area, const Cell cell) : name(name), level(0), area(area), health(MAX_PLAYER_HEALTH), money(1000), cell(cell) {};
     ~Player() {}
 
     std::string name;
     unsigned int level;
     unsigned int area;
     int health;
+    int money;
     Cell cell;
 
     std::unordered_map<ItemID, unsigned int> items;

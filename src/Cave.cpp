@@ -46,7 +46,7 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
     portals[GetStartingCell()] = parentPortal;
 
     // Load descriptions if need be
-    if (descriptions.size() == 0) descriptions = Game::Get().ReadLines("caves.txt"); // TODO: remove Game::Get()
+    if (descriptions.size() == 0) descriptions = ReadLines("caves.txt");
 }
 
 void Cave::LoadAreas()
@@ -99,7 +99,7 @@ void Cave::Look(Player& player) const
         player << "- You see a crack of light eminating from a crevice - the way out is here...\n";
 
     // Pick seed for tile then display some random descriptions
-    srand(player.cell);
+    srand(seed * 10000 + player.cell);
     std::set<size_t> usedIndexes;
     for (size_t i = 0; i < numDescriptions; ++i)
     {

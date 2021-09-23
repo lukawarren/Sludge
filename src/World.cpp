@@ -47,8 +47,8 @@ World::World(const int width, const int height, const unsigned int seed) : Area(
 
 void World::LoadAreas()
 {
-    const int caveChance = 5;
-    const int townChance = 5;
+    const int caveChance = 1;
+    const int townChance = 1;
 
     unsigned int caveSeed = 0;
     unsigned int townSeed = 0;
@@ -107,7 +107,7 @@ void World::Look(Player& player) const
     // Notify player of portals
     const auto portal = GetPortal(player.cell);
     if (portal.has_value())
-        player << "- " << Game::Get().areas[portal.value().area]->GetPortalText() << "\n";
+        player << "- " << Game::Get().areas[portal->area]->GetPortalText() << "\n";
 
     const int viewWidth = 10;
     const int viewHeight = 5;

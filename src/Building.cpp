@@ -16,17 +16,19 @@ Building::Building(const unsigned int seed, const Portal parentPortal, const boo
     // Add exit
     portals[GetStartingCell()] = parentPortal;
 
+    // Test vendor
+    vendors[GetStartingCell()] = Vendor();
+
     // Load descriptions if need be
     if (grandFurniture.size() > 0) return;
+    
+    grandFurniture = ReadLines("buildings/furniture_grand.txt");
+    grandFloors = ReadLines("buildings/floors_grand.txt");
+    grandWalls = ReadLines("buildings/walls_grand.txt");
 
-    // TODO: remove Game::Get()
-    grandFurniture = Game::Get().ReadLines("buildings/furniture_grand.txt");
-    grandFloors = Game::Get().ReadLines("buildings/floors_grand.txt");
-    grandWalls = Game::Get().ReadLines("buildings/walls_grand.txt");
-
-    humbleFurniture = Game::Get().ReadLines("buildings/furniture_humble.txt");
-    humbleFloors = Game::Get().ReadLines("buildings/floors_humble.txt");
-    humbleWalls = Game::Get().ReadLines("buildings/walls_humble.txt");
+    humbleFurniture = ReadLines("buildings/furniture_humble.txt");
+    humbleFloors = ReadLines("buildings/floors_humble.txt");
+    humbleWalls = ReadLines("buildings/walls_humble.txt");
 }
 
 void Building::LoadAreas() {}
@@ -34,15 +36,21 @@ Cell Building::GetStartingCell() const { return 0; }
 
 void Building::Look(Player& player) const
 {
-    player << "You are in a building.\n\n";
-    srand(player.cell);
+    player << "You are in a building.\n";
+    srand(seed * 10000 + player.cell);
 
     // Descriptions
     const std::string& furniture = grand ? grandFurniture[rand() % grandFurniture.size()] : humbleFurniture[rand() % humbleFurniture.size()];
     const std::string& floors = grand ? grandFloors[rand() % grandFloors.size()] : humbleFloors[rand() % humbleFloors.size()];
     const std::string& walls = grand ? grandWalls[rand() % grandWalls.size()] : humbleWalls[rand() % humbleWalls.size()];
 
-    player << walls << " " << furniture << " " << floors << "\n";
+    player << "- " << walls << "\n";
+    player << "- " << furniture << "\n";
+    player << "- " << floors << "\n";
+
+    // Vendors
+    if (vendors.count(player.cell))
+        player << "- The building's proprietor, " << vendors.at(player.cell).name << ", invites you to trade\n";
 }
 
 void Building::Move(Player& player, const Direction direction, const int distance) const
