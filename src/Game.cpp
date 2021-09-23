@@ -129,9 +129,10 @@ Player* Game::GetPlayer(const std::string& name)
 
 AreaID Game::AddArea(Area* area)
 {
+    const AreaID id = areas.size();
     areas.emplace_back(area);
     area->LoadAreas();
-    return areas.size()-1;
+    return id;
 }
 
 AreaID Game::GetAreaID(Area* area)

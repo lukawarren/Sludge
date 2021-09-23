@@ -27,7 +27,7 @@ Town::Town(const unsigned int seed, const Portal parentPortal) :
     portals[origin] = parentPortal;
 
     // Load names if need be then pick one, before removing it to avoid duplicates
-    if (names.size() == 0) names = Game::Get().ReadLines("towns.txt");
+    if (names.size() == 0) names = Game::Get().ReadLines("towns.txt"); // TODO: remove Game::Get()
     
     const size_t index = rand() % names.size();
     name = names[index];
@@ -36,7 +36,16 @@ Town::Town(const unsigned int seed, const Portal parentPortal) :
         names.erase(names.begin() + index);
 }
 
-void Town::LoadAreas() {}
+void Town::LoadAreas()
+{
+    // Test building
+    const Portal portal = {
+        Game::Get().GetAreaID(this),    // Exit area
+        width/2                         // Exit cell
+    };
+
+    portals[width/2] = Portal { Game::Get().AddArea(new Building(0, portal)) };
+}
 
 Cell Town::GetStartingCell() const
 {
@@ -45,6 +54,8 @@ Cell Town::GetStartingCell() const
 
 void Town::Look(Player& player) const
 {
+    const auto portal = GetPortal(player.cell);
+    
     if (player.cell == GetStartingCell())
     {
         player << "You stand amidst the entrance to " << name << "!\n\n";
@@ -53,6 +64,9 @@ void Town::Look(Player& player) const
         player << "- Gulliver's Inn\n"; 
         player << "\n";
     }
+
+    else if (portal.has_value())
+        player << "- " << Game::Get().areas[portal.value().area]->GetPortalText() << "\n\n";
 
     player << "A path stretches out in each of these directions:\n";
 
@@ -92,7 +106,7 @@ void Town::Move(Player& player, const Direction direction, const int distance) c
     else Look(player);
 }
 
-std::vector<ItemStack>& Town::GetItems(const Cell cell) const
+std::vector<ItemStack>& Town::GetItems(const Cell cell)
 {
     return cells[cell].items;
 }

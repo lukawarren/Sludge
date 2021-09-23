@@ -1,5 +1,4 @@
 #include "Cave.h"
-#include "PerlinNoise.hpp"
 #include "Item.h"
 #include "Game.h"
 
@@ -47,7 +46,7 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
     portals[GetStartingCell()] = parentPortal;
 
     // Load descriptions if need be
-    if (descriptions.size() == 0) descriptions = Game::Get().ReadLines("caves.txt");
+    if (descriptions.size() == 0) descriptions = Game::Get().ReadLines("caves.txt"); // TODO: remove Game::Get()
 }
 
 void Cave::LoadAreas()
@@ -152,7 +151,7 @@ void Cave::Move(Player& player, const Direction direction, const int distance) c
     else Look(player);
 }
 
-std::vector<ItemStack>& Cave::GetItems(const Cell cell) const
+std::vector<ItemStack>& Cave::GetItems(const Cell cell)
 {
     return rooms[cell].items;
 }

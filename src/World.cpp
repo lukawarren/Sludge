@@ -191,7 +191,7 @@ void World::Move(Player& player, const Direction direction, const int distance) 
     Look(player);
 }
 
-std::vector<ItemStack>& World::GetItems(const Cell cell) const
+std::vector<ItemStack>& World::GetItems(const Cell cell)
 {
     static std::vector<ItemStack> nullVector;
     return nullVector;

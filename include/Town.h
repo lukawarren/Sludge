@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "Area.h"
+#include "Building.h"
 
 class Town : public Area
 {
@@ -12,7 +13,7 @@ public:
     Cell GetStartingCell() const override;
     void Look(Player& player) const override;
     void Move(Player& player, const Direction direction, const int distance) const override;
-    std::vector<ItemStack>& GetItems(const Cell cell) const override;
+    std::vector<ItemStack>& GetItems(const Cell cell) override;
     std::string GetPortalText() const override;
 
 private:
