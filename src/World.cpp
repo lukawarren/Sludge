@@ -47,47 +47,163 @@ World::World(const int width, const int height, const unsigned int seed) : Area(
 
 void World::LoadAreas()
 {
-    const int caveChance = 1;
-    const int townChance = 1;
+    const int nCaves = width * height / 512;
+    const int nTowns = width * height / 512;
 
     unsigned int caveSeed = 0;
     unsigned int townSeed = 0;
 
-    // Go through each walkable tile and randomly generate caves and towns
-    for (int y = 0; y < height; ++y)
+    const auto OnRandomPosition = [&](const int count, const std::function<Area*(const Portal)> f)
     {
-        for (int x = 0; x < width; ++x)
+        for (int i = 0; i < count; ++i)
         {
-            const auto cell = y * width + x;
-            if (GetTile(cell) == Tile::Water) continue;
-
+            // Pick valid cell
+            auto cell = rand() % (width*height);
+            while (GetTile(cell) == Tile::Water)
+                cell = rand() % (width*height);
+            
+            // Add portal
             const Portal portal = {
                 Game::Get().GetAreaID(this),    // Exit area
                 cell                            // Exit cell
             };
+            portals[cell] = { Game::Get().AddArea(f(portal)) };
+        }
+    };
 
-            if (rand() % 100 <= caveChance)
+    // Generate caves
+    OnRandomPosition(nCaves, [&](const Portal portal)
+    {
+        return new Cave
+        (
+            10,                                 // Width
+            10,                                 // Height
+            ++caveSeed,                         // Seed
+            portal
+        );
+    });
+
+    // Generate towns
+    std::vector<Cell> towns;
+    OnRandomPosition(nTowns, [&](const Portal portal)
+    {
+        towns.emplace_back(portal.cell.value());
+        return new Town(++townSeed, portal);
+    });
+
+    // Generate paths
+    Cell centre = height / 2 * width + width / 2;
+    for (size_t i = 1; i < towns.size(); ++i)
+        CreatePath(towns[i], centre);
+}
+
+/*
+    Uses A* path-finding
+    https://en.wikipedia.org/wiki/A*_search_algorithm
+*/
+void World::CreatePath(const Cell startCell, const Cell endCell)
+{
+    // Make nodes
+    struct Node
+    {
+        int x;
+        int y;
+        std::vector<Node*> neighbours;
+        bool walkable;
+
+        bool visited = false;
+        Node* parent = nullptr;
+        float localGoal = std::numeric_limits<float>::max();
+        float globalGoal = std::numeric_limits<float>::max();
+    };
+    
+    std::vector<Node> nodes(width * height, Node {});
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        { 
+            nodes[y * width + x].x = x,
+            nodes[y * width + x].y = y;
+            nodes[y * width + x].walkable = tiles[y * width + x] != Tile::Water;
+        }
+    }
+
+    // Work out neighbours
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        { 
+            auto& node = nodes[y * width + x];
+
+            if (y > 0)          node.neighbours.push_back(&nodes[(y - 1) * width + (x + 0)]);
+            if (y < height-1)   node.neighbours.push_back(&nodes[(y + 1) * width + (x + 0)]);
+            if (x > 0)          node.neighbours.push_back(&nodes[(y + 0) * width + (x - 1)]);
+            if (x < width-1)    node.neighbours.push_back(&nodes[(y + 0) * width + (x + 1)]);
+        }
+    }
+
+    const auto Distance = [](Node* a, Node* b)
+    {
+        return sqrtf((a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y));
+    };
+
+    // Starting conditions
+    Node* start = &nodes[startCell];
+    Node* end = &nodes[endCell];
+    Node* current = start;
+    current->localGoal = 0.0f;
+    current->globalGoal = Distance(start, end);    
+
+    // Have "not tested" list for processing
+    std::list<Node*> untestedNodes = { start };
+
+    // Continue until *a* path is found - not necessarily the absolute best path, but a path nonetheless
+    while (!untestedNodes.empty() && current != end)
+    {
+        // Sort nodes by global goal, with lowest first
+        untestedNodes.sort([](const Node* lhs, const Node* rhs)
+        {
+            return lhs->globalGoal < rhs->globalGoal;
+        });
+
+        // Ditch nodes already visited at front of the list....
+        while (!untestedNodes.empty() && untestedNodes.front()->visited)
+            untestedNodes.pop_front();
+
+        // ...then if we're in trouble, abandon ship
+        if (untestedNodes.empty()) break;
+
+        // Node chosen, proceed
+        current = untestedNodes.front();
+        current->visited = true;
+        
+        for (auto neighbour : current->neighbours)
+        {
+            // If not visited, duly note down for later use
+            if (!neighbour->visited && neighbour->walkable)
+                untestedNodes.push_back(neighbour);
+            
+            // Work out potential lowest parent distance
+            float possibleLowestGoal = current->localGoal + Distance(current, neighbour);
+
+            // Update local goal of neighbour if value can be pushed lower by way of our parent
+            if (possibleLowestGoal < neighbour->localGoal)
             {
-                const auto caveArea = Game::Get().AddArea
-                (
-                    new Cave
-                    (
-                        10,                                 // Width
-                        10,                                 // Height
-                        ++caveSeed,                         // Seed
-                        portal
-                    )
-                );
-
-                // Add enterance
-                portals[cell] = { caveArea };
+                neighbour->parent = current;
+                neighbour->localGoal = possibleLowestGoal;
+                neighbour->globalGoal = neighbour->localGoal + Distance(neighbour, end);
             }
+        }
+    }
 
-            else if (rand() % 100 <= townChance)
-            {
-                const auto town = Game::Get().AddArea(new Town(++townSeed, portal));
-                portals[cell] = { town };
-            }
+    // Walk from end node to start node, following parents and creating paths
+    if (end != nullptr)
+    {
+        Node* n = end;
+        while (n->parent != nullptr)
+        {
+            tiles[n->y * width + n->x] = Tile::Path;
+            n = n->parent;
         }
     }
 }
@@ -227,20 +343,11 @@ char World::TileToChar(const Tile t) const
         case Tile::Water:
             return '~';
 
+        case Tile::Path:
+            return '#';
+
         default:
             return ' ';
-    }
-}
-
-std::string World::TileToString(const Tile t) const
-{
-    switch (t)
-    {
-        case World::Tile::Grass: return "Grass";
-        case World::Tile::Water: return "Water";
-        case World::Tile::Rock:  return "Rock";
-        case World::Tile::None:  return " ";
-        default:                 return "Unknown";
     }
 }
 

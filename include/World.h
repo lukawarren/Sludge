@@ -13,6 +13,7 @@ public:
         Grass,
         Water,
         Rock,
+        Path,
         None
     };
 
@@ -30,9 +31,9 @@ private:
     int width;
     int height;
 
+    void CreatePath(const Cell startCell, const Cell endCell);
+
     Tile GetTile(Cell cell) const;
     Tile GetTile(const int x, const int y) const;
-
     char TileToChar(const Tile t) const;
-    std::string TileToString(const Tile t) const;
 };

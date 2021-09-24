@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <random>
 #include <set>
+#include <limits>
+#include <list>
 
 typedef int Cell;
 typedef size_t AreaID;
