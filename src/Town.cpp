@@ -8,23 +8,12 @@ std::vector<std::string> Town::names;
 Town::Town(const unsigned int seed, const Portal parentPortal) :
     Area(seed), parentPortal(parentPortal)
 {
-    // Decide dimiensions
-    const int pathLength = 10;
-    const int wingLength = 0;
-    width = wingLength*2 + 1;
-    height = pathLength;
-
-    // Create empty rooms
-    cells = new TownCell[width * height];
-    
-    // Create path from the middle of the bottom row, upwards
-    const Cell origin = GetStartingCell();
-
-    for (int i = 0; i < pathLength; ++i)
-        cells[i * width + width/2].present = true;
+    width = rand() % 2 + 4;
+    height = rand() % 2 + 2;
+    cells = new TownCell[width*height];
 
     // Add exit
-    portals[origin] = parentPortal;
+    portals[GetStartingCell()] = parentPortal;
 
     // Load names if need be then pick one, before removing it to avoid duplicates
     if (names.size() == 0) names = ReadLines("towns.txt");
@@ -38,44 +27,75 @@ Town::Town(const unsigned int seed, const Portal parentPortal) :
 
 void Town::LoadAreas()
 {
-    // Test building
-    const Portal portal = {
-        Game::Get().GetAreaID(this),    // Exit area
-        width/2                         // Exit cell
-    };
+    const int nBuildings = width*2;
 
-    portals[width/2] = Portal { Game::Get().AddArea(new Building(rand(), portal)) };
+    for (int i = 0; i < nBuildings; ++i)
+    {
+        const Cell cell = rand() % (width * height);
+
+        const Portal portal = {
+            Game::Get().GetAreaID(this),    // Exit area
+            cell                            // Exit cell
+        };
+        
+        cells[cell].building = new Building(rand(), portal, rand() % 100 <= 20);
+        portals[cell] = Portal { Game::Get().AddArea(cells[cell].building) };
+    }
 }
 
 Cell Town::GetStartingCell() const
 {
-    return (height-1) * width + width/2;
+    return (height-1) * width + width/2; // Bottom-middle
 }
 
 void Town::Look(Player& player) const
 {
-    const auto portal = GetPortal(player.cell);
-    
-    if (player.cell == GetStartingCell())
-    {
-        player << "You stand amidst the entrance to " << name << "!\n\n";
+    player << "You stand in " << name << "!\n\n";
 
-        player << "Reading a signpost you notice the following buildings:\n";
-        player << "- Gulliver's Inn\n"; 
+    const int playerX = player.cell % width;
+    const int playerY = player.cell / width;
+
+    // Top and bottom borders
+    const auto DrawEdge = [&]()
+    {
+        for (int i = 0; i < width+2; ++i) player << "#";
         player << "\n";
+    };
+
+    DrawEdge();
+
+    for (int y = 0; y < height; y++)
+    {
+        player << "#";
+
+        for (int x = 0; x < width; ++x)
+        {
+            if (x == playerX && y == playerY) player << "X";
+            else if (GetPortal(y * width + x).has_value()) player << "?";
+            else player << " ";
+        }
+
+        player << "#\n";
     }
 
-    else if (portal.has_value())
-        player << "- " << Game::Get().areas[portal->area]->GetPortalText() << "\n\n";
+    DrawEdge();
+    player << "\n";
 
-    player << "A path stretches out in each of these directions:\n";
+    if (player.cell == GetStartingCell())
+        player << "The exit to the wider world stands here\n";
 
-    const int worldX = player.cell % width;
-    const int worldY = player.cell / width;
-    if (IsValid(worldX,   worldY-1)) player << "- W\n";
-    if (IsValid(worldX-1, worldY  )) player << "- A\n";
-    if (IsValid(worldX,   worldY+1)) player << "- S\n";
-    if (IsValid(worldX+1, worldY  )) player << "- D\n";
+    else if (GetPortal(player.cell).has_value())
+    {
+        player << "Facing the street lies a ";
+
+        if (cells[player.cell].building->grand) player << "fine establishment";
+        else player << "building like any other";
+        
+        player << ", " << cells[player.cell].building->name << "\n";
+    }
+
+    else
+        player << "The street seems devoid of any places of note\n";
 }
 
 void Town::Move(Player& player, const Direction direction, const int distance) const

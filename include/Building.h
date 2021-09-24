@@ -15,10 +15,12 @@ public:
     std::vector<ItemStack>& GetItems(const Cell cell) override;
     std::string GetPortalText() const override;
 
+    bool grand;
+    std::string name;
+
 private:
     Portal parentPortal;
     std::vector<ItemStack> items;
-    bool grand;
 
     static std::vector<std::string> grandFurniture;
     static std::vector<std::string> grandFloors;

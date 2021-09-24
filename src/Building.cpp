@@ -11,13 +11,14 @@ std::vector<std::string> Building::humbleFloors;
 std::vector<std::string> Building::humbleWalls;
 
 Building::Building(const unsigned int seed, const Portal parentPortal, const bool grand) :
-    Area(seed), parentPortal(parentPortal), grand(grand)
+    Area(seed), grand(grand), parentPortal(parentPortal)
 {
     // Add exit
     portals[GetStartingCell()] = parentPortal;
 
     // Test vendor
     vendors[GetStartingCell()] = Vendor();
+    name = vendors[GetStartingCell()].name + "'s general goods";
 
     // Load descriptions if need be
     if (grandFurniture.size() > 0) return;
@@ -50,7 +51,7 @@ void Building::Look(Player& player) const
 
     // Vendors
     if (vendors.count(player.cell))
-        player << "- The building's proprietor, " << vendors.at(player.cell).name << ", invites you to trade\n";
+        player << "- The building's proprietor, " << vendors.at(player.cell).name << ", invites you to trade...\n";
 }
 
 void Building::Move(Player& player, const Direction direction, const int distance) const

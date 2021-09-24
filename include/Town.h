@@ -19,8 +19,9 @@ public:
 private:
     struct TownCell
     {
-        bool present = false;
+        bool present = true;
         std::vector<ItemStack> items = {};
+        Building* building;
     };
 
     Portal parentPortal;
