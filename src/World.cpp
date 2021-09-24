@@ -48,31 +48,36 @@ World::World(const int width, const int height, const unsigned int seed) : Area(
 void World::LoadAreas()
 {
     const int nCaves = width * height / 512;
-    const int nTowns = width * height / 512;
+    const int nTowns = 4;
 
-    unsigned int caveSeed = 0;
-    unsigned int townSeed = 0;
+    unsigned int caveSeed = rand();
+    unsigned int townSeed = rand();
 
-    const auto OnRandomPosition = [&](const int count, const std::function<Area*(const Portal)> f)
+    const auto OnRandomPosition = [&](const int count, const int minDistanceFromCentre, const std::function<Area*(const Portal)> f)
     {
         for (int i = 0; i < count; ++i)
         {
             // Pick valid cell
-            auto cell = rand() % (width*height);
-            while (GetTile(cell) == Tile::Water)
-                cell = rand() % (width*height);
-            
+            auto cellX = rand() % width;
+            auto cellY = rand() % height;
+
+            while (GetTile(cellY * width + cellX) == Tile::Water || sqrtf(cellX*cellX + cellY*cellY) < minDistanceFromCentre)
+            {
+                cellX = rand() % width;
+                cellY = rand() % height;
+            }
+
             // Add portal
             const Portal portal = {
                 Game::Get().GetAreaID(this),    // Exit area
-                cell                            // Exit cell
+                cellY * width + cellX           // Exit cell
             };
-            portals[cell] = { Game::Get().AddArea(f(portal)) };
+            portals[cellY * width + cellX] = { Game::Get().AddArea(f(portal)) };
         }
     };
 
     // Generate caves
-    OnRandomPosition(nCaves, [&](const Portal portal)
+    OnRandomPosition(nCaves, 0, [&](const Portal portal)
     {
         return new Cave
         (
@@ -85,7 +90,7 @@ void World::LoadAreas()
 
     // Generate towns
     std::vector<Cell> towns;
-    OnRandomPosition(nTowns, [&](const Portal portal)
+    OnRandomPosition(nTowns, 5, [&](const Portal portal)
     {
         towns.emplace_back(portal.cell.value());
         return new Town(++townSeed, portal);
@@ -93,7 +98,7 @@ void World::LoadAreas()
 
     // Generate paths
     Cell centre = height / 2 * width + width / 2;
-    for (size_t i = 1; i < towns.size(); ++i)
+    for (size_t i = 0; i < towns.size(); ++i)
         CreatePath(towns[i], centre);
 }
 
@@ -144,6 +149,9 @@ void World::CreatePath(const Cell startCell, const Cell endCell)
 
     const auto Distance = [](Node* a, Node* b)
     {
+        // Normally, we would just use pythagoras but on terminal screens, characters are
+        // twice as tall as they are long, and so this makes for weird results! To solve this,
+        // make all vertical measurements twice as large.
         return sqrtf((a->x - b->x) * (a->x - b->x) + (a->y - b->y) * (a->y - b->y));
     };
 

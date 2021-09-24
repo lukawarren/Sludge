@@ -27,6 +27,7 @@ public:
     std::vector<Area*> areas;
 
     std::string motd;
+    unsigned int seed;
     std::vector<std::string> vendorNames;
 
     std::vector<std::vector<ItemID>> weapons;

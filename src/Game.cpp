@@ -6,6 +6,7 @@ Game::Game()
 {
     // Load variables
     motd = ReadFile("motd.txt");
+    seed = std::stoi(ReadFile("seed.txt"));
 
     attackVerbs = ReadLines("combat/attack/verbs.txt");
     attackMinimalDamageDescriptions = ReadLines("combat/attack/minimal_damages.txt");
@@ -121,7 +122,7 @@ AreaID Game::GetAreaID(Area* area)
 
 void Game::LoadAreas()
 {
-    AddArea(new World(64, 32, 123));
+    AddArea(new World(64, 32, seed));
     ((World*)areas[0])->Render();
     std::cout << "Game loaded" << std::endl;
 }
