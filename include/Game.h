@@ -31,6 +31,7 @@ public:
     std::vector<std::string> vendorNames;
 
     std::vector<std::vector<ItemID>> weapons;
+    std::vector<std::vector<ItemID>> armours;
     std::vector<Enemy> enemies;
     std::vector<Item> items;
     

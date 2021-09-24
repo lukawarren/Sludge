@@ -4,8 +4,8 @@
 class Item
 {
 public:
-    Item(const std::string& name, const std::string& description, const int price, const int attack = 1) :
-        name(name), description(description), price(price), attack(attack) {}
+    Item(const std::string& name, const std::string& description, const int price, const int attack = 1, const int defence = 0) :
+        name(name), description(description), price(price), attack(attack), defence(defence) {}
 
     Item() {}
     ~Item() {}
@@ -20,6 +20,7 @@ public:
     std::string description;
     int price;
     int attack;
+    int defence;
 };
 
 struct ItemStack

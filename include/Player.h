@@ -19,6 +19,7 @@ public:
 
     std::unordered_map<ItemID, unsigned int> items;
     std::optional<ItemID> weapon;
+    std::optional<ItemID> armour;
     
     std::string outputBuffer;
 

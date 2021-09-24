@@ -81,7 +81,7 @@ Connection::Connection(int clientFd, const std::string address)
         
         // Return output
         player->outputBuffer += "\n";
-        Send(player->outputBuffer);
+        Send("\n" + player->outputBuffer);
         player->outputBuffer = "";
     }
 

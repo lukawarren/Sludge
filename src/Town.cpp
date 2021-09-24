@@ -32,6 +32,7 @@ void Town::LoadAreas()
     for (int i = 0; i < nBuildings; ++i)
     {
         const Cell cell = rand() % (width * height);
+        if (cell == GetStartingCell()) continue;
 
         const Portal portal = {
             Game::Get().GetAreaID(this),    // Exit area

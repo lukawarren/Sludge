@@ -24,54 +24,107 @@ Game::Game()
     items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone", 5));
 
     // Weapons
-    const std::vector<std::pair<std::string, std::string>> descriptions =
     {
-        { "Broken", "pitiable if nothing else" },
-        { "Rusty", "tetanus might do the trick" },
-        { "Grimy", "in need of a good clean" },
-        { "Grim", "the more you look the worse it becomes" },
-        { "Flimsy", "just don't drop it" },
-        { "Inoffensive", "not likely to inspire much fear" },
-        { "Passable", "good enough to do the job" },
-        { "Pleasing", "rather nice-looking" },
-        { "Gleaming", "surprisingly welll maintained" },
-        { "Refined", "a more sensible option" },
-        { "Sharp", "looking to do some serious business" },
-        { "Threatening", "more than just a suggestion" },
-        { "Terrifying", "the envy of your foes" },
-        { "Deadly", "the nightmare of all who disagree with you" }
-    };
-
-    const std::vector<std::string> nouns =
-    {
-        "Dagger",
-        "Shortsword",
-        "Longsword",
-        "Axe",
-        "Mace"
-    };
-
-    for (size_t description = 0; description < descriptions.size(); ++description)
-    {
-        std::vector<ItemID> descriptionItems;
-        descriptionItems.reserve(nouns.size());
-
-        for (size_t noun = 0; noun < nouns.size(); ++noun)
+        const std::vector<std::pair<std::string, std::string>> descriptions =
         {
-            // Weapons are added, description-wise, in order of rarity
-            const int attack = noun * 10 + description + 2; // +2 to avoid 0 attack (2 because all items have at least 1)
-            items.emplace_back
-            (
-                descriptions[description].first + " " + nouns[noun],
-                descriptions[description].second,
-                10 * attack,
-                attack
-            );
+            { "Broken", "pitiable if nothing else" },
+            { "Rusty", "tetanus might do the trick" },
+            { "Grimy", "in need of a good clean" },
+            { "Grim", "the more you look the worse it becomes" },
+            { "Flimsy", "just don't drop it" },
+            { "Inoffensive", "not likely to inspire much fear" },
+            { "Passable", "good enough to do the job" },
+            { "Pleasing", "rather nice-looking" },
+            { "Gleaming", "surprisingly welll maintained" },
+            { "Refined", "a more sensible option" },
+            { "Sharp", "looking to do some serious business" },
+            { "Threatening", "more than just a suggestion" },
+            { "Terrifying", "the envy of your foes" },
+            { "Deadly", "the nightmare of all who disagree with you" }
+        };
 
-            descriptionItems.emplace_back(items.size()-1);
+        const std::vector<std::string> nouns =
+        {
+            "Dagger",
+            "Shortsword",
+            "Longsword",
+            "Axe",
+            "Mace"
+        };
+
+        for (size_t description = 0; description < descriptions.size(); ++description)
+        {
+            std::vector<ItemID> descriptionItems;
+            descriptionItems.reserve(nouns.size());
+
+            for (size_t noun = 0; noun < nouns.size(); ++noun)
+            {
+                // Weapons are added, description-wise, in order of rarity
+                const int attack = noun * 10 + description + 2; // +2 to avoid 0 attack (2 because all items have at least 1)
+                items.emplace_back
+                (
+                    descriptions[description].first + " " + nouns[noun],
+                    descriptions[description].second,
+                    10 * attack,
+                    attack
+                );
+
+                descriptionItems.emplace_back(items.size()-1);
+            }
+
+            weapons.emplace_back(descriptionItems);
         }
+    }
 
-        weapons.emplace_back(descriptionItems);
+    // Armour
+    {
+        const std::vector<std::pair<std::string, std::string>> descriptions =
+        {
+            { "Tattered", "more air than armour" },
+            { "Punctured", "certainly worse for wear" },
+            { "Dented", "nothing a good hammer can't fix" },
+            { "Muddy", "no doubt well-worn" },
+            { "Unremarkable", "nothing too shoddy" },
+            { "Dependable", "will probably hold its own" },
+            { "Solid", "not liable to break any time soon" },
+            { "Reinforced", "nice and sturdy" },
+            { "Inspiring", "looks really quite dapper" },
+            { "Gleaming", "so polilshed it blinds" },
+        };
+
+        const std::vector<std::string> adjectives =
+        {
+            "Wool",
+            "Leather",
+            "Stone",
+            "Brass",
+            "Iron",
+            "Chainmail",
+            "Steel",
+        };
+
+        for (size_t description = 0; description < descriptions.size(); ++description)
+        {
+            std::vector<ItemID> descriptionItems;
+            descriptionItems.reserve(adjectives.size());
+
+            for (size_t adjective = 0; adjective < adjectives.size(); ++adjective)
+            {
+                const int defence = adjective * 5 + description;
+                items.emplace_back
+                (
+                    descriptions[description].first + " " + adjectives[adjective] + " Armour",
+                    descriptions[description].second,
+                    15 * defence,
+                    1,
+                    defence
+                );
+
+                descriptionItems.emplace_back(items.size()-1);
+            }
+
+            armours.emplace_back(descriptionItems);
+        }
     }
 
     // Create enemies
@@ -86,7 +139,6 @@ Game::Game()
         }, 
         "Gremlin", 30, 80
     );
-
 }
 
 Player* Game::AddPlayer(const std::string& name)
@@ -157,6 +209,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
     if (command == "help")
     {
         player << "- wield [item] - equip item for combat\n";
+        player << "- wear [item] - wear item for defence\n";
+        player << "- unwield - unequip currently wielded item\n";
+        player << "- unwear - unequip currently worn item\n";
         player << "- look - see surrounding area\n";
         player << "- items - view nearby items\n";
         player << "- get [item] - pickup item\n";
@@ -191,6 +246,38 @@ bool Game::OnCommand(const std::string& string, Player& player)
                 i++;
             }
         }
+    }
+
+    else if (command == "wear" && arg.has_value())
+    {
+        // Check item ID is valid
+        if ((unsigned int) arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
+        else
+        {
+            // Find Nth item and equip
+            int i = 1;
+            for (const auto& [key, value] : player.items)
+            {
+                if (i == arg.value())
+                {
+                    player.armour = key;
+                    player << "You now wear a " << items[key].name << "\n";
+                }
+                i++;
+            }
+        }
+    }
+
+    else if (command == "unwield")
+    {
+        player.weapon.reset();
+        player << "You now wield no weapon\n";
+    }
+
+    else if (command == "unwear")
+    {
+        player.armour.reset();
+        player << "You take off anything previously worn\n";
     }
 
     else if (command == "look")
@@ -302,6 +389,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
                     // If item was wielded, unweild
                     if (player.weapon == itemID) player.weapon.reset();
+
+                    // If item was worn, unwear
+                    if (player.armour == itemID) player.armour.reset();
                 }
 
                 player << "You sell the " << items[itemID].name << " for " << items[itemID].price << " gold\n";
@@ -317,6 +407,18 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
         if (player.items.size() == 0) player << "You have no items\n";
         else PrintItems(player, player.GetItemsAsList());
+
+        player << "\n";
+
+        if (player.weapon.has_value())
+            player << "- You weild your " << items[player.weapon.value()].name << "\n";
+        else
+            player << "- You wield no weaopn\n";
+        
+        if (player.armour.has_value())
+            player << "- You wear your " << items[player.armour.value()].name << "\n";
+        else
+            player << "- You wear no armour\n";
     }
 
     else if (command == "move")
@@ -382,9 +484,10 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
 {
     // Dimensions
     std::pair<unsigned int, unsigned int> idWidth          = { 5,  10 }; // Current, maximum
-    std::pair<unsigned int, unsigned int> nameWidth        = { 10, 20 }; // Current, maximum
-    std::pair<unsigned int, unsigned int> descriptionWidth = { 11, 50 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> nameWidth        = { 10, 30 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> descriptionWidth = { 11, 60 }; // Current, maximum
     std::pair<unsigned int, unsigned int> attackWidth      = { 6,  10 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> defenceWidth     = { 7,  10 }; // Current, maximum
     std::pair<unsigned int, unsigned int> priceWidth       = { 5,  10 }; // Current, maximum
     std::pair<unsigned int, unsigned int> countWidth       = { 5,  10 }; // Current, maximum
 
@@ -394,6 +497,7 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
         const std::string& name = items[itemStack.item].name;
         const std::string& description = items[itemStack.item].description;
         const auto attack = items[itemStack.item].attack;
+        const auto defence = items[itemStack.item].defence;
         const auto price = items[itemStack.item].price;
 
         if (i / 10 > idWidth.first && i / 10 < idWidth.second)
@@ -407,6 +511,9 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
         
         if (attack / 10 > (int) attackWidth.first && attack / 10 < (int) attackWidth.second)
             attackWidth.first = attack / 10;
+
+        if (defence / 10 > (int) defenceWidth.first && defence / 10 < (int) defenceWidth.second)
+            defenceWidth.first = defence / 10;
 
         if (price / 10 > (int) priceWidth.first && price / 10 < (int) priceWidth.second)
             priceWidth.first = price / 10;
@@ -436,6 +543,7 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
     PrintHeading("Name", nameWidth.first);
     PrintHeading("Description", descriptionWidth.first);
     PrintHeading("Attack", attackWidth.first);
+    PrintHeading("Defence", defenceWidth.first);
     PrintHeading("Price", priceWidth.first);
     PrintHeading("Count", countWidth.first);
     player << "|\n";
@@ -451,6 +559,7 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
     PrintLine(nameWidth.first);
     PrintLine(descriptionWidth.first);
     PrintLine(attackWidth.first);
+    PrintLine(defenceWidth.first);
     PrintLine(priceWidth.first);
     PrintLine(countWidth.first);
     player << "|\n";
@@ -487,14 +596,16 @@ void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
         const std::string& name = items[itemStack.item].name;
         const std::string& description = items[itemStack.item].description;
         const auto attack = items[itemStack.item].attack;
+        const auto defence = items[itemStack.item].defence;
         const auto price = items[itemStack.item].price;
 
         player << "| ";
-        PrintString(std::to_string(i+1), idWidth.first);                                player << " | ";
-        PrintString(name, nameWidth.first);                                             player << " | ";
-        PrintString(description, descriptionWidth.first);                               player << " | ";
-        PrintString(attack > 1 ? std::to_string(attack) : "None", attackWidth.first);   player << " | ";
-        PrintString(std::to_string(price), priceWidth.first);                           player << " | ";
+        PrintString(std::to_string(i+1), idWidth.first);                                 player << " | ";
+        PrintString(name, nameWidth.first);                                              player << " | ";
+        PrintString(description, descriptionWidth.first);                                player << " | ";
+        PrintString(attack > 1 ? std::to_string(attack) : "None", attackWidth.first);    player << " | ";
+        PrintString(defence > 0 ? std::to_string(defence) : "None", defenceWidth.first); player << " | ";
+        PrintString(std::to_string(price), priceWidth.first);                            player << " | ";
         PrintString(std::to_string(itemStack.number), countWidth.first);
         player << " |\n";
     }
@@ -599,7 +710,9 @@ bool Game::OnCombat(Player& player, EnemyInstance& enemyInstance)
             player << " " << verb << " you with its " << attack.limb << ". ";
 
             // Actually attack, plus or minus some variation
-            player.health -= enemy.damage * variation;
+            float defence = 0.0f;
+            if (player.armour.has_value()) defence = items[player.armour.value()].defence;
+            player.health -= std::min(enemy.damage * variation - defence, 0.0f);
 
             // Damage message
             const float damagePercent = (float) player.health / (float) MAX_PLAYER_HEALTH;
