@@ -58,7 +58,7 @@ Game::Game()
         for (size_t noun = 0; noun < nouns.size(); ++noun)
         {
             // Weapons are added, description-wise, in order of rarity
-            const int attack = noun * 10 + description;
+            const int attack = noun * 10 + description + 2; // +2 to avoid 0 attack (2 because all items have at least 1)
             items.emplace_back
             (
                 descriptions[description].first + " " + nouns[noun],
@@ -232,109 +232,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
         if (vendor == nullptr) player << "No vendor will serve you here\n";
         else
         {
-            // Dimensions
-            std::pair<unsigned int, unsigned int> idWidth          = { 5,  10 }; // Current, maximum
-            std::pair<unsigned int, unsigned int> nameWidth        = { 10, 30 }; // Current, maximum
-            std::pair<unsigned int, unsigned int> descriptionWidth = { 11, 40 }; // Current, maximum
-            std::pair<unsigned int, unsigned int> attackWidth      = { 6,  10 }; // Current, maximum
-            std::pair<unsigned int, unsigned int> priceWidth       = { 5,  10 }; // Current, maximum
-            std::pair<unsigned int, unsigned int> countWidth       = { 5,  10 }; // Current, maximum
-
-            for (size_t i = 0; i < vendor->items.size(); ++i)
-            {
-                const auto& itemStack = vendor->items[i];
-                const std::string& name = items[itemStack.item].name;
-                const std::string& description = items[itemStack.item].description;
-                const auto attack = items[itemStack.item].attack;
-                const auto price = items[itemStack.item].price;
-
-                if (i / 10 > idWidth.first && i / 10 < idWidth.second)
-                    idWidth.first = i / 10;
-
-                if (name.length() > nameWidth.first && name.length() < nameWidth.second)
-                    nameWidth.first = name.length();
-
-                if (description.length() > descriptionWidth.first && description.length() < descriptionWidth.second)
-                    descriptionWidth.first = description.length();
-                
-                if (attack / 10 > (int) attackWidth.first && attack / 10 < (int) attackWidth.second)
-                    attackWidth.first = attack / 10;
-
-                if (price / 10 > (int) priceWidth.first && price / 10 < (int) priceWidth.second)
-                    priceWidth.first = price / 10;
-
-                if (itemStack.number / 10 > countWidth.first && itemStack.number / 10 < countWidth.second)
-                    countWidth.first = itemStack.number / 10;
-            }
-
-            const auto PrintHeading = [&](const std::string& heading, const unsigned int width)
-            {
-                player << "| ";
-
-                if (heading.size() < width)
-                    for (size_t i = 0; i < (width - heading.size()) / 2; ++i) player << " ";
-
-                player << heading;
-
-                // Funky maths to avoid the half flooring our value on odd widths
-                if (heading.size() + 1 < width)
-                    for (size_t i = 0; i < (width - heading.size() + 1) / 2; ++i) player << " ";
-
-                player << " ";
-            };
-
-            // Headings
-            PrintHeading("Id", idWidth.first);
-            PrintHeading("Name", nameWidth.first);
-            PrintHeading("Description", descriptionWidth.first);
-            PrintHeading("Attack", attackWidth.first);
-            PrintHeading("Price", priceWidth.first);
-            PrintHeading("Count", countWidth.first);
-            player << "|\n";
-
-            // Data
-            const auto PrintString = [&](const std::string& string, const unsigned int maxWidth)
-            {
-                // Cut-off if too long
-                char shortened[maxWidth+1] = {};
-                if (string.size() >= maxWidth)
-                {
-                    strncpy(shortened, string.c_str(), maxWidth-3);
-                    shortened[maxWidth - 1] = '.';
-                    shortened[maxWidth - 2] = '.';
-                    shortened[maxWidth - 3] = '.';
-                }
-                else strncpy(shortened, string.c_str(), string.size()+1); // +1 for null terminator
-
-                // Centre
-                const size_t length = strlen(shortened);
-                for (size_t i = 0; i < (maxWidth - length) / 2; ++i)
-                    player << " ";
-
-                player << shortened;
-
-                // Centre again (funky maths, see above)
-                for (size_t i = 0; i < (maxWidth - length + 1) / 2; ++i)
-                    player << " ";
-            };
-
-            for (size_t i = 0; i < vendor->items.size(); ++i)
-            {
-                const auto& itemStack = vendor->items[i];
-                const std::string& name = items[itemStack.item].name;
-                const std::string& description = items[itemStack.item].description;
-                const auto attack = items[itemStack.item].attack;
-                const auto price = items[itemStack.item].price;
-
-                player << "| ";
-                PrintString(std::to_string(i+1), idWidth.first);                                player << " | ";
-                PrintString(name, nameWidth.first);                                             player << " | ";
-                PrintString(description, descriptionWidth.first);                               player << " | ";
-                PrintString(attack > 1 ? std::to_string(attack) : "None", attackWidth.first);   player << " | ";
-                PrintString(std::to_string(price), priceWidth.first);                           player << " | ";
-                PrintString(std::to_string(itemStack.number), countWidth.first);
-                player << " |\n";
-            }
+            PrintItems(player, vendor->items);
         }
     }
 
@@ -415,26 +313,9 @@ bool Game::OnCommand(const std::string& string, Player& player)
         player << "Name: " << player.name << "\n";
         player << "Level: " << player.level << "\n";
         player << "Gold: " << player.money << "\n\n";
-        player << "Inventory: \n";
 
-        size_t i = 1;
-        for (const auto& [key, value] : player.items)
-        {
-            if (i != 1) player << "\n"; // Padding
-
-            player << "- " << i++ << " - " << items[key].name << ": " << items[key].description << " (x" << value << ")\n";
-
-            player << "----> Value: " << items[key].price << "\n";
-
-            if (items[key].attack > 1)
-                player << "----> Attack: " << items[key].attack << "\n";
-
-            if (player.weapon.has_value() && player.weapon.value() == key)
-                player << "----> You are wielding this\n";
-        }
-
-        if (player.items.size() == 0) player << "- You have no items\n";
-
+        if (player.items.size() == 0) player << "You have no items\n";
+        else PrintItems(player, player.GetItemsAsList());
     }
 
     else if (command == "move")
@@ -493,19 +374,128 @@ void Game::PrintItems(Player& player, bool showIfEmpty)
     }
 
     if (!showIfEmpty) player << "\n";
-    player << "Items:\n";
+    PrintItems(player, itemIDs);
+}
 
-    for (size_t i = 0; i < itemIDs.size(); ++i)
+void Game::PrintItems(Player& player, const std::vector<ItemStack>& itemStacks)
+{
+    // Dimensions
+    std::pair<unsigned int, unsigned int> idWidth          = { 5,  10 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> nameWidth        = { 10, 20 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> descriptionWidth = { 11, 50 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> attackWidth      = { 6,  10 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> priceWidth       = { 5,  10 }; // Current, maximum
+    std::pair<unsigned int, unsigned int> countWidth       = { 5,  10 }; // Current, maximum
+
+    for (size_t i = 0; i < itemStacks.size(); ++i)
     {
-        if (i != 1) player << "\n"; // Padding
+        const auto& itemStack = itemStacks[i];
+        const std::string& name = items[itemStack.item].name;
+        const std::string& description = items[itemStack.item].description;
+        const auto attack = items[itemStack.item].attack;
+        const auto price = items[itemStack.item].price;
 
-        const auto& item = items[itemIDs[i].item];
-        player << "- " << i+1 << " - " << item.name << ": " << item.description << " (x" << itemIDs[i].number << ")\n";
+        if (i / 10 > idWidth.first && i / 10 < idWidth.second)
+            idWidth.first = i / 10;
+
+        if (name.length() > nameWidth.first && name.length() < nameWidth.second)
+            nameWidth.first = name.length();
+
+        if (description.length() > descriptionWidth.first && description.length() < descriptionWidth.second)
+            descriptionWidth.first = description.length();
         
-        if (item.attack > 1)
-            player << "----> Attack: " << item.attack << "\n";
+        if (attack / 10 > (int) attackWidth.first && attack / 10 < (int) attackWidth.second)
+            attackWidth.first = attack / 10;
 
-        player << "----> Value: " << item.price << "\n";
+        if (price / 10 > (int) priceWidth.first && price / 10 < (int) priceWidth.second)
+            priceWidth.first = price / 10;
+
+        if (itemStack.number / 10 > countWidth.first && itemStack.number / 10 < countWidth.second)
+            countWidth.first = itemStack.number / 10;
+    }
+
+    const auto PrintHeading = [&](const std::string& heading, const unsigned int width)
+    {
+        player << "| ";
+
+        if (heading.size() < width)
+            for (size_t i = 0; i < (width - heading.size()) / 2; ++i) player << " ";
+
+        player << heading;
+
+        // Funky maths to avoid the half flooring our value on odd widths
+        if (heading.size() + 1 < width)
+            for (size_t i = 0; i < (width - heading.size() + 1) / 2; ++i) player << " ";
+
+        player << " ";
+    };
+
+    // Headings
+    PrintHeading("Id", idWidth.first);
+    PrintHeading("Name", nameWidth.first);
+    PrintHeading("Description", descriptionWidth.first);
+    PrintHeading("Attack", attackWidth.first);
+    PrintHeading("Price", priceWidth.first);
+    PrintHeading("Count", countWidth.first);
+    player << "|\n";
+
+    // The line under the headings
+    const auto PrintLine = [&](const unsigned int width)
+    {
+        player << "|";
+        for (unsigned int i = 0; i < width+2; ++i) player << "-";
+    };
+    
+    PrintLine(idWidth.first);
+    PrintLine(nameWidth.first);
+    PrintLine(descriptionWidth.first);
+    PrintLine(attackWidth.first);
+    PrintLine(priceWidth.first);
+    PrintLine(countWidth.first);
+    player << "|\n";
+
+    // Data
+    const auto PrintString = [&](const std::string& string, const unsigned int maxWidth)
+    {
+        // Cut-off if too long
+        char shortened[maxWidth+1] = {};
+        if (string.size() > maxWidth)
+        {
+            strncpy(shortened, string.c_str(), maxWidth-3);
+            shortened[maxWidth - 1] = '.';
+            shortened[maxWidth - 2] = '.';
+            shortened[maxWidth - 3] = '.';
+        }
+        else strncpy(shortened, string.c_str(), string.size()+1); // +1 for null terminator
+
+        // Centre
+        const size_t length = strlen(shortened);
+        for (size_t i = 0; i < (maxWidth - length) / 2; ++i)
+            player << " ";
+
+        player << shortened;
+
+        // Centre again (funky maths, see above)
+        for (size_t i = 0; i < (maxWidth - length + 1) / 2; ++i)
+            player << " ";
+    };
+
+    for (size_t i = 0; i < itemStacks.size(); ++i)
+    {
+        const auto& itemStack = itemStacks[i];
+        const std::string& name = items[itemStack.item].name;
+        const std::string& description = items[itemStack.item].description;
+        const auto attack = items[itemStack.item].attack;
+        const auto price = items[itemStack.item].price;
+
+        player << "| ";
+        PrintString(std::to_string(i+1), idWidth.first);                                player << " | ";
+        PrintString(name, nameWidth.first);                                             player << " | ";
+        PrintString(description, descriptionWidth.first);                               player << " | ";
+        PrintString(attack > 1 ? std::to_string(attack) : "None", attackWidth.first);   player << " | ";
+        PrintString(std::to_string(price), priceWidth.first);                           player << " | ";
+        PrintString(std::to_string(itemStack.number), countWidth.first);
+        player << " |\n";
     }
 }
 

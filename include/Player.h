@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include "Item.h"
 
 #define MAX_PLAYER_HEALTH 100
 
@@ -38,5 +39,13 @@ public:
     {
         outputBuffer += s;
         return *this;
+    }
+
+    std::vector<ItemStack> GetItemsAsList() const
+    {
+        std::vector<ItemStack> list;
+        for (const auto& [key, value] : items)
+            list.emplace_back(key, value);
+        return list;
     }
 };
