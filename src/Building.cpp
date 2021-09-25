@@ -18,8 +18,14 @@ std::vector<std::string> Building::homeNames;
 std::vector<std::string> Building::tavernAdjectives;
 std::vector<std::string> Building::tavernNouns;
 
+std::vector<std::string> Building::weaponFurniture;
+std::vector<std::string> Building::armourFurniture;
+std::vector<std::string> Building::foodFurniture;
+std::vector<std::string> Building::homeFurniture;
+std::vector<std::string> Building::tavernFurniture;
+
 Building::Building(const unsigned int seed, const Portal parentPortal, const Type type, const bool grand) :
-    Area(seed), grand(grand), parentPortal(parentPortal)
+    Area(seed), grand(grand), type(type), parentPortal(parentPortal)
 {
     // Add exit
     portals[GetStartingCell()] = parentPortal;
@@ -35,13 +41,19 @@ Building::Building(const unsigned int seed, const Portal parentPortal, const Typ
         humbleFloors = ReadLines("buildings/floors_humble.txt");
         humbleWalls = ReadLines("buildings/walls_humble.txt");
 
-        weaponNames = ReadLines("buildings/vendors/weapons.txt");
-        armourNames = ReadLines("buildings/vendors/armour.txt");
-        foodNames = ReadLines("buildings/vendors/food.txt");
-        homeNames = ReadLines("buildings/vendors/homes.txt");
+        weaponNames = ReadLines("buildings/vendors/weapons_names.txt");
+        armourNames = ReadLines("buildings/vendors/armour_names.txt");
+        foodNames = ReadLines("buildings/vendors/food_names.txt");
+        homeNames = ReadLines("buildings/vendors/homes_names.txt");
 
-        tavernAdjectives = ReadLines("buildings/vendors/taverns-adjectives.txt");
-        tavernNouns = ReadLines("buildings/vendors/taverns-nouns.txt");
+        tavernAdjectives = ReadLines("buildings/vendors/taverns_adjectives.txt");
+        tavernNouns = ReadLines("buildings/vendors/taverns_nouns.txt");
+
+        weaponFurniture = ReadLines("buildings/vendors/weapons_furniture.txt");
+        armourFurniture = ReadLines("buildings/vendors/armour_furniture.txt");
+        foodFurniture = ReadLines("buildings/vendors/food_furniture.txt");
+        homeFurniture = ReadLines("buildings/vendors/homes_furniture.txt");
+        tavernFurniture = ReadLines("buildings/vendors/taverns_furniture.txt");
     }
 
     // Make vendor
@@ -112,6 +124,33 @@ void Building::Look(Player& player) const
     player << "- " << walls << "\n";
     player << "- " << furniture << "\n";
     player << "- " << floors << "\n";
+
+    // Place-specific descriptions
+    switch (type)
+    {
+        case Tavern:
+            player << "- " << tavernFurniture[rand() % tavernFurniture.size()] << "\n";
+        break;
+
+        case Food:
+            player << "- " << foodFurniture[rand() % foodFurniture.size()] << "\n";
+        break;
+
+        case Weapons:
+            player << "- " << weaponFurniture[rand() % weaponFurniture.size()] << "\n";
+        break;
+
+        case Armour:
+            player << "- " << armourFurniture[rand() % armourFurniture.size()] << "\n";
+        break;
+
+        case Home:
+            player << "- " << homeFurniture[rand() % homeFurniture.size()] << "\n";
+        break;
+
+        default:
+        break;
+    }
 
     // Vendors
     if (vendors.count(player.cell))

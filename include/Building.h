@@ -28,6 +28,7 @@ public:
 
     bool grand;
     std::string name;
+    Type type;
 
 private:
     Portal parentPortal;
@@ -48,4 +49,10 @@ private:
 
     static std::vector<std::string> tavernAdjectives;
     static std::vector<std::string> tavernNouns;
+
+    static std::vector<std::string> weaponFurniture;
+    static std::vector<std::string> armourFurniture;
+    static std::vector<std::string> foodFurniture;
+    static std::vector<std::string> homeFurniture;
+    static std::vector<std::string> tavernFurniture;
 };
