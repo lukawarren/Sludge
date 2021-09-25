@@ -5,7 +5,17 @@
 class Vendor
 {
 public:
+
+    enum Type
+    {
+        Weapons,
+        Armour,
+        Food,
+        Drinks
+    };
+
     Vendor();
+    Vendor(const Type type);
     ~Vendor();
 
     void AddItem(ItemID itemID);

@@ -5,7 +5,18 @@
 class Building : public Area
 {
 public:
-    Building(const unsigned int seed, const Portal parentPortal, const bool grand = false);
+
+    enum Type
+    {
+        Tavern,
+        Food,
+        Weapons,
+        Armour,
+        Home,
+        NUM_TYPES
+    };
+
+    Building(const unsigned int seed, const Portal parentPortal, const Type type, const bool grand);
     ~Building();
 
     void LoadAreas() override;
@@ -29,4 +40,12 @@ private:
     static std::vector<std::string> humbleFurniture;
     static std::vector<std::string> humbleFloors;
     static std::vector<std::string> humbleWalls;
+
+    static std::vector<std::string> weaponNames;
+    static std::vector<std::string> armourNames;
+    static std::vector<std::string> foodNames;
+    static std::vector<std::string> homeNames;
+
+    static std::vector<std::string> tavernAdjectives;
+    static std::vector<std::string> tavernNouns;
 };

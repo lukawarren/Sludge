@@ -39,7 +39,7 @@ void Town::LoadAreas()
             cell                            // Exit cell
         };
         
-        cells[cell].building = new Building(rand(), portal, rand() % 100 <= 20);
+        cells[cell].building = new Building(rand(), portal, static_cast<Building::Type>(rand() % Building::NUM_TYPES), rand() % 100 <= 20);
         portals[cell] = Portal { Game::Get().AddArea(cells[cell].building) };
     }
 }

@@ -157,6 +157,36 @@ Game::Game()
         }
     }
 
+    // Drinks
+    {
+        const std::vector<std::string> nouns =
+        {
+            "Dirty Water",
+            "Water",
+            "Milk",
+            "Ale",
+            "Wine",
+            "Spirits"
+        };
+
+        for (size_t noun = 0; noun < nouns.size(); ++noun)
+        {
+            const int health = (noun+1) * 10;
+
+            items.emplace_back
+            (
+                nouns[noun],
+                "restores " + std::to_string(health) + " health",
+                health / 2,
+                0,
+                0,
+                health 
+            );
+
+            drinks.emplace_back(items.size()-1);
+        }
+    }
+
     // Create enemies
     enemies.emplace_back
     (
@@ -261,7 +291,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
     {
         player << "- wield [item] - equip item for combat\n";
         player << "- wear [item] - wear item for defence\n";
-        player << "- eat [item] - consume item for health\n";
+        player << "- consume [item] - eat or drink item for health\n";
         player << "- unwield - unequip currently wielded item\n";
         player << "- unwear - unequip currently worn item\n";
         player << "- look - see surrounding area\n";
@@ -298,18 +328,18 @@ bool Game::OnCommand(const std::string& string, Player& player)
         });
     }
 
-    else if (command == "eat" && arg.has_value())
+    else if (command == "consume" && arg.has_value())
     {
         GetNthItem(arg.value(), [&](ItemID id)
         {
             if (items[id].health == 0)
             {
-                player << "Such a thing cannot be eaten!\n";
+                player << "Such a thing cannot be consumed!\n";
                 return;
             }
             
             player.health = std::min(player.health + items[id].health, MAX_PLAYER_HEALTH);
-            player << "You eat a " << items[id].name << " for " << items[id].health << " health\n";
+            player << "You consume a " << items[id].name << " for " << items[id].health << " health\n";
             player.RemoveItem(id);
         });
     }
