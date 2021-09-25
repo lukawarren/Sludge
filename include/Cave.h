@@ -16,7 +16,7 @@ public:
     std::string GetPortalText() const override;
 
 private:
-    struct Room
+    struct CaveCell
     {
         bool present = false;
         std::vector<ItemStack> items = {
@@ -25,7 +25,7 @@ private:
     };
 
     Portal parentPortal;
-    Room* rooms;
+    CaveCell* cells;
     int width;
     int height;
     

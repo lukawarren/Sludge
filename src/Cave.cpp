@@ -8,7 +8,7 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
     Area(seed), parentPortal(parentPortal), width(width), height(height)
 {
     // Create empty rooms
-    rooms = new Room[width * height];
+    cells = new CaveCell[width * height];
 
     // Random-walk to generate cave, starting from centre
     const int numRooms = 5;
@@ -31,13 +31,13 @@ Cave::Cave(const int width, const int height, const unsigned int seed, const Por
             // Clamp to reasonable bounds
             x = std::max(std::min(x, width-1), 0);
             y = std::max(std::min(y, height-1), 0);
-            rooms[y * width + x].present = true;
+            cells[y * width + x].present = true;
         }
 
         // If number of set rooms exceeds minimum, continuue
         int count = 0;
         for (int i = 0; i < width*height; ++i)
-            if (rooms[i].present) count++;
+            if (cells[i].present) count++;
         
         if (count >= numRooms) break;
     }
@@ -57,8 +57,8 @@ void Cave::LoadAreas()
 
     for (int i = 0; i < width*height; ++i)
     {
-        if (rooms[i].present && rand() % 100 <= weaponChance)
-            rooms[i].items.emplace_back
+        if (cells[i].present && rand() % 100 <= weaponChance)
+            cells[i].items.emplace_back
             (
                 ItemStack 
                 {
@@ -67,7 +67,7 @@ void Cave::LoadAreas()
                 }
             );
 
-        if (rooms[i].present && rand() % 100 <= enemyChance)
+        if (cells[i].present && rand() % 100 <= enemyChance)
             enemies[i] = { Enemy::Enemies::Gremlin, Game::Get().enemies[Enemy::Enemies::Gremlin].maxHealth };
     }
 }
@@ -76,7 +76,7 @@ Cell Cave::GetStartingCell() const
 {
     // Return first room we find
     for (int i = 0; i < width*height; ++i)
-        if (rooms[i].present)
+        if (cells[i].present)
             return i;
 
     return 0;
@@ -125,35 +125,15 @@ void Cave::Look(Player& player) const
 
 void Cave::Move(Player& player, const Direction direction, const int distance) const
 {
-    const int worldX = player.cell % width;
-    const int worldY = player.cell / width;
-
-    // Try walking at decreasing distances until successful (or we reach 0)
-    int maxDistance = distance;
-    while (maxDistance > 0)
+    Area::Move(player, direction, distance, width, height, [&](const int x, const int y)
     {
-        if (direction == Direction::Up && IsValid(worldX, worldY - maxDistance))
-            { player.cell -= width * maxDistance; break; }
-        
-        else if (direction == Direction::Down && IsValid(worldX, worldY + maxDistance))
-            { player.cell += width * maxDistance; break; }
-
-        else if (direction == Direction::Left && IsValid(worldX - maxDistance, worldY))
-            { player.cell -= maxDistance; break; }
-
-        else if (direction == Direction::Right && IsValid(worldX + maxDistance, worldY))
-            { player.cell += maxDistance; break; }
-        
-        else maxDistance--;
-    }
-
-    if (maxDistance == 0) player << "You have hit a dead end\n";
-    else Look(player);
+        return IsValid(x, y);
+    });
 }
 
 std::vector<ItemStack>& Cave::GetItems(const Cell cell)
 {
-    return rooms[cell].items;
+    return cells[cell].items;
 }
 
 std::string Cave::GetPortalText() const
@@ -163,10 +143,10 @@ std::string Cave::GetPortalText() const
 
 bool Cave::IsValid(const int x, const int y) const
 {
-    return x >= 0 && y >= 0 && x < width && y < height && rooms[y * width + x].present;
+    return x >= 0 && y >= 0 && x < width && y < height && cells[y * width + x].present;
 }
 
 Cave::~Cave()
 {
-    delete[] rooms;
+    delete[] cells;
 }

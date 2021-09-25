@@ -60,7 +60,7 @@ Game::Game()
             for (size_t noun = 0; noun < nouns.size(); ++noun)
             {
                 // Weapons are added, description-wise, in order of rarity
-                const int attack = noun * 10 + description + 2; // +2 to avoid 0 attack (2 because all items have at least 1)
+                const int attack = noun * 10 + description + 1; // +1 to avoid 0 attack
                 items.emplace_back
                 (
                     descriptions[description].first + " " + nouns[noun],
@@ -657,7 +657,7 @@ bool Game::OnCombat(Player& player, EnemyInstance& enemyInstance)
             player << ". ";
 
             // Actually attack, plus or minus some variation
-            enemyInstance.health -= items[player.weapon.value()].attack * variation;
+            enemyInstance.health -= std::max(items[player.weapon.value()].attack * variation, 1.0f);
             
             // Work out how damaged the enemy is
             float enemyHealthPercent = (float)enemyInstance.health / (float)enemy.maxHealth;
@@ -712,7 +712,7 @@ bool Game::OnCombat(Player& player, EnemyInstance& enemyInstance)
             // Actually attack, plus or minus some variation
             float defence = 0.0f;
             if (player.armour.has_value()) defence = items[player.armour.value()].defence;
-            player.health -= std::min(enemy.damage * variation - defence, 0.0f);
+            player.health -= std::max(enemy.damage * variation - defence, 0.0f); // Avoid the player having so much defence they gain health!
 
             // Damage message
             const float damagePercent = (float) player.health / (float) MAX_PLAYER_HEALTH;

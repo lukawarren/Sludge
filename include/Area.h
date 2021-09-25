@@ -37,7 +37,36 @@ public:
     virtual void Move(Player& player, const Direction direction, const int distance) const = 0;
     virtual std::vector<ItemStack>& GetItems(const Cell cell) = 0;
     virtual std::string GetPortalText() const = 0;
-    
+
+    template<typename F>
+    void Move(Player& player, const Direction direction, const int distance, const int width, const int height, F IsValid) const
+    {
+        const int worldX = player.cell % width;
+        const int worldY = player.cell / width;
+
+        // Try walking at decreasing distances until successful (or we reach 0)
+        int maxDistance = distance;
+        while (maxDistance > 0)
+        {
+            if (direction == Direction::Up && IsValid(worldX, worldY - maxDistance))
+                { player.cell -= width * maxDistance; break; }
+            
+            else if (direction == Direction::Down && IsValid(worldX, worldY + maxDistance))
+                { player.cell += width * maxDistance; break; }
+
+            else if (direction == Direction::Left && IsValid(worldX - maxDistance, worldY))
+                { player.cell -= maxDistance; break; }
+
+            else if (direction == Direction::Right && IsValid(worldX + maxDistance, worldY))
+                { player.cell += maxDistance; break; }
+            
+            else maxDistance--;
+        }
+
+        if (maxDistance == 0) player << "You have hit a dead end\n";
+        else Look(player);
+    }
+
     std::optional<Portal> GetPortal(const Cell cell) const
     {
         if (portals.count(cell)) return portals.at(cell);

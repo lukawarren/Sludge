@@ -285,34 +285,11 @@ void World::Look(Player& player) const
 
 void World::Move(Player& player, const Direction direction, const int distance) const
 {
-    const auto TileIsWalkable = [&](const int x, const int y)
+    Area::Move(player, direction, distance, width, height, [&](const int x, const int y)
     {
         const auto tile = GetTile(x, y);
         return tile != Tile::None && tile != Tile::Water;
-    };
-
-    // Try walking until an impassable tile is reached
-    for (int i = 0; i < distance; ++i)
-    {
-        int worldX = player.cell % width;
-        int worldY = player.cell / width;
-
-        if (direction == Direction::Up && TileIsWalkable(worldX, worldY - 1))
-            player.cell -= width;
-        
-        else if (direction == Direction::Down && TileIsWalkable(worldX, worldY + 1))
-            player.cell += width;
-
-        else if (direction == Direction::Left && TileIsWalkable(worldX - 1, worldY))
-            player.cell -= 1;
-
-        else if (direction == Direction::Right && TileIsWalkable(worldX + 1, worldY))
-            player.cell += 1;
-        
-        else break;
-    }
-
-    Look(player);
+    });
 }
 
 std::vector<ItemStack>& World::GetItems(const Cell cell)

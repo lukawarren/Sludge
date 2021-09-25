@@ -101,30 +101,10 @@ void Town::Look(Player& player) const
 
 void Town::Move(Player& player, const Direction direction, const int distance) const
 {
-    const int worldX = player.cell % width;
-    const int worldY = player.cell / width;
-
-    // Try walking at decreasing distances until successful (or we reach 0)
-    int maxDistance = distance;
-    while (maxDistance > 0)
+    Area::Move(player, direction, distance, width, height, [&](const int x, const int y)
     {
-        if (direction == Direction::Up && IsValid(worldX, worldY - maxDistance))
-            { player.cell -= width * maxDistance; break; }
-        
-        else if (direction == Direction::Down && IsValid(worldX, worldY + maxDistance))
-            { player.cell += width * maxDistance; break; }
-
-        else if (direction == Direction::Left && IsValid(worldX - maxDistance, worldY))
-            { player.cell -= maxDistance; break; }
-
-        else if (direction == Direction::Right && IsValid(worldX + maxDistance, worldY))
-            { player.cell += maxDistance; break; }
-        
-        else maxDistance--;
-    }
-
-    if (maxDistance == 0) player << "You have hit a dead end\n";
-    else Look(player);
+        return IsValid(x, y);
+    });
 }
 
 std::vector<ItemStack>& Town::GetItems(const Cell cell)

@@ -4,7 +4,7 @@
 class Item
 {
 public:
-    Item(const std::string& name, const std::string& description, const int price, const int attack = 1, const int defence = 0) :
+    Item(const std::string& name, const std::string& description, const int price, const int attack = 0, const int defence = 0) :
         name(name), description(description), price(price), attack(attack), defence(defence) {}
 
     Item() {}
