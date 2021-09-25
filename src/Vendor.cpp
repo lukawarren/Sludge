@@ -13,6 +13,9 @@ Vendor::Vendor()
     
     for (const auto& armourGroup : Game::Get().armours)
         items.emplace_back(armourGroup[rand() % armourGroup.size()], rand() % 3 + 1);
+
+    for (const auto& food : Game::Get().foods)
+        items.emplace_back(food, rand() % 3 + 1);
 }
 
 void Vendor::AddItem(ItemID itemID)

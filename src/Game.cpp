@@ -21,7 +21,7 @@ Game::Game()
     defenceMajorDamageDescriptions = ReadLines("combat/defence/major_damages.txt");
 
     // Create items
-    items.emplace_back(Item("Cave Mushroom", "a mushroom found amongst shadows and stone", 5));
+    items.emplace_back(Item("Cave Mushroom", "a 5 HP mushroom found amongst shadows and stone", 5, 0, 0, 5));
 
     // Weapons
     {
@@ -116,7 +116,7 @@ Game::Game()
                     descriptions[description].first + " " + adjectives[adjective] + " Armour",
                     descriptions[description].second,
                     15 * defence,
-                    1,
+                    0,
                     defence
                 );
 
@@ -124,6 +124,36 @@ Game::Game()
             }
 
             armours.emplace_back(descriptionItems);
+        }
+    }
+
+    // Food
+    {
+        const std::vector<std::string> nouns =
+        {
+            "Apple",
+            "Cabbage",
+            "Loaf of Bread",
+            "Strange Meat",
+            "Mysterious Stew",
+            "Roasted Meat",
+        };
+
+        for (size_t noun = 0; noun < nouns.size(); ++noun)
+        {
+            const int health = (noun+1) * 10;
+
+            items.emplace_back
+            (
+                nouns[noun],
+                "restores " + std::to_string(health) + " health",
+                health / 2,
+                0,
+                0,
+                health 
+            );
+
+            foods.emplace_back(items.size()-1);
         }
     }
 
@@ -206,10 +236,32 @@ bool Game::OnCommand(const std::string& string, Player& player)
             arg = std::stoi(data+i+1);
     }
 
+    /*
+        Findings nth item where N starts from *1*!
+    */
+    const auto GetNthItem = [&](const size_t n, const std::function<void(ItemID)> f)
+    {
+        if (n > player.items.size() || n == 0)
+        {
+            player << "You have no such item\n";
+            return;
+        }
+ 
+        size_t i = 1;
+        for (const auto& [key, value] : player.items)
+        {
+            if (i++ == n)
+            {
+                f(key);
+            }
+        }
+    };
+
     if (command == "help")
     {
         player << "- wield [item] - equip item for combat\n";
         player << "- wear [item] - wear item for defence\n";
+        player << "- eat [item] - consume item for health\n";
         player << "- unwield - unequip currently wielded item\n";
         player << "- unwear - unequip currently worn item\n";
         player << "- look - see surrounding area\n";
@@ -230,42 +282,36 @@ bool Game::OnCommand(const std::string& string, Player& player)
 
     else if (command == "wield" && arg.has_value())
     {
-        // Check item ID is valid
-        if ((unsigned int) arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
-        else
+        GetNthItem(arg.value(), [&](ItemID id)
         {
-            // Find Nth item and equip
-            int i = 1;
-            for (const auto& [key, value] : player.items)
-            {
-                if (i == arg.value())
-                {
-                    player.weapon = key;
-                    player << "You now wield a " << items[key].name << "\n";
-                }
-                i++;
-            }
-        }
+            player.weapon = id;
+            player << "You now wield a " << items[id].name << "\n";
+        });
     }
 
     else if (command == "wear" && arg.has_value())
     {
-        // Check item ID is valid
-        if ((unsigned int) arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
-        else
+        GetNthItem(arg.value(), [&](ItemID id)
         {
-            // Find Nth item and equip
-            int i = 1;
-            for (const auto& [key, value] : player.items)
+            player.armour = id;
+            player << "You now wear a " << items[id].name << "\n";
+        });
+    }
+
+    else if (command == "eat" && arg.has_value())
+    {
+        GetNthItem(arg.value(), [&](ItemID id)
+        {
+            if (items[id].health == 0)
             {
-                if (i == arg.value())
-                {
-                    player.armour = key;
-                    player << "You now wear a " << items[key].name << "\n";
-                }
-                i++;
+                player << "Such a thing cannot be eaten!\n";
+                return;
             }
-        }
+            
+            player.health = std::min(player.health + items[id].health, MAX_PLAYER_HEALTH);
+            player << "You eat a " << items[id].name << " for " << items[id].health << " health\n";
+            player.RemoveItem(id);
+        });
     }
 
     else if (command == "unwield")
@@ -300,8 +346,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
         {
             // Give item to player
             const auto itemID = itemStacks[arg.value()-1].item;
-            const auto amount = itemStacks[arg.value()-1].number;
-            player.items[itemID] += amount;
+            player.items[itemID]++;
             player << "You pick up a " << items[itemID].name << "\n";
 
             // Remove item from area
@@ -333,7 +378,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
         else
         {
             // Check for valid item
-            if ((unsigned int)arg.value() > vendor->items.size() || arg.value() == 0) player << "There is no such item\n";
+            if ((unsigned int)arg.value() > vendor->items.size() || arg.value() == 0) player << "There is no such item for sale\n";
 
             else
             {
@@ -365,12 +410,12 @@ bool Game::OnCommand(const std::string& string, Player& player)
         else
         {
             // Check for valid item
-            if ((unsigned int)arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item\n";
+            if ((unsigned int)arg.value() > player.items.size() || arg.value() == 0) player << "You have no such item to sell\n";
 
             else
             {
                 // Find item
-                ItemID itemID;
+                ItemID itemID = 99999999;
                 int i = 1;
 
                 for (const auto& [key, value] : player.items)
@@ -382,17 +427,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
                 // Give to vendor and take from player
                 vendor->AddItem(itemID);
                 player.money += items[itemID].price;
-                if (player.items[itemID] > 1) player.items[itemID]--;
-                else
-                {
-                    player.items.erase(itemID);
-
-                    // If item was wielded, unweild
-                    if (player.weapon == itemID) player.weapon.reset();
-
-                    // If item was worn, unwear
-                    if (player.armour == itemID) player.armour.reset();
-                }
+                player.RemoveItem(itemID);
 
                 player << "You sell the " << items[itemID].name << " for " << items[itemID].price << " gold\n";
             }
@@ -402,6 +437,7 @@ bool Game::OnCommand(const std::string& string, Player& player)
     else if (command == "info")
     {
         player << "Name: " << player.name << "\n";
+        player << "Health: " << player.health << "\n";
         player << "Level: " << player.level << "\n";
         player << "Gold: " << player.money << "\n\n";
 

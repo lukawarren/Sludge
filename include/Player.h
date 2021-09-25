@@ -49,4 +49,19 @@ public:
             list.emplace_back(key, value);
         return list;
     }
+
+    void RemoveItem(ItemID itemID)
+    {
+        if (items[itemID] > 1) items[itemID]--;
+        else
+        {
+            items.erase(itemID);
+
+            // If item was wielded, unweild
+            if (weapon == itemID) weapon.reset();
+
+            // If item was worn, unwear
+            if (armour == itemID) armour.reset();
+        }
+    }
 };

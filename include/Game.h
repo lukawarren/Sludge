@@ -32,6 +32,7 @@ public:
 
     std::vector<std::vector<ItemID>> weapons;
     std::vector<std::vector<ItemID>> armours;
+    std::vector<ItemID> foods;
     std::vector<Enemy> enemies;
     std::vector<Item> items;
     
